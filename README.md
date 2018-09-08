@@ -34,9 +34,9 @@ implementation 'com.factorymarket.rxelm:rxelm:0.2.0-SNAPSHOT'
 ## Concepts 
 RxElm is heavily influenced by The Elm Architecture. Its core concepts:
 
-Unidirectional dataflow
-Immutable state
-Managed side effects
+* Unidirectional dataflow
+* Immutable state
+* Managed side effects
 
 It allows to write highly testable and predictable UI logic. RxElm is written in Kotlin and built 
 on top of RxJava2. One of the main advantages of RxElm is simplicity and while RxElm relies on solid reactive foundation
@@ -49,16 +49,16 @@ This is the type for describing the state of your app or screen.
 #### Msg (short for Message)  
 Base type for all events happening during interaction with UI (such as button click, text inputs, etc)
 
-####Cmd (short for Command) 
+#### Cmd (short for Command) 
 Type for side-effects. If you create Cmd, that means you want to execute a particular side effect (http request or other IO operation).
 When executed, the command will return new Msg with resulting data.
 
-#### Function Update  
+#### Update()  
 Function Update takes Msg and State as input, and returns a pair of two values — new State and Cmd, or simply speaking, what side effect you want to execute for incoming Msg. 
 The main aspect of this function is that it is a pure function. That means there must be no side effects inside this function.
 
-#### Function Render 
-Takes State as an input, and renders view in declarative manner. 
+#### Render() 
+Function render() takes State as an input, and renders view in declarative manner. 
 
 ## Getting Started
 
@@ -91,12 +91,10 @@ class MyFragment : Fragment(), Component {
         plusBtn = view.findViewById(R.id.plus_btn)
         minusBtn = view.findViewById(R.id.minus_btn)
         counterText = view.findViewById(R.id.counter_text)
-        
-        val counter = if (savedInstanceState != null) {
-            savedInstanceState.getString("counter")           
-        }
                
-        programDisposable = program.init(IncrementDecrementState(value = counter ?: 0), this)                
+        programDisposable = program.init(
+            IncrementDecrementState(value = savedInstanceState?.getInt("counter", 0) ?: 0), 
+            this)                
     }
     
     override fun update(msg: Msg, state: counterText): Pair<State, Cmd> {          
@@ -137,9 +135,9 @@ class MyFragment : Fragment(), Component {
 To learn more, see the [wiki](https://github.com/FactoryMarketRetailGmbH/RxElm/wiki) for a user guide and best practices.
 
 ### Sample Project 
-To see full working sample, see [sample App](https://github.com/FactoryMarketRetailGmbH/RxElm/tree/master/sample) 
+To see full working sample, check out [the sample app](https://github.com/FactoryMarketRetailGmbH/RxElm/tree/master/sample) 
 
 
 ### Resources
-Taming state in Android with Elm Architecture and Kotlin [series of blog posts](https://proandroiddev.com/taming-state-in-android-with-elm-architecture-and-kotlin-part-1-566caae0f706)
-[Official guide into The Elm Architecture](https://guide.elm-lang.org/architecture/)
+* Taming state in Android with Elm Architecture and Kotlin [series of blog posts](https://proandroiddev.com/taming-state-in-android-with-elm-architecture-and-kotlin-part-1-566caae0f706)
+* [Official guide into The Elm Architecture](https://guide.elm-lang.org/architecture/)
