@@ -12,7 +12,7 @@ class ProgramBuilder {
     private var handleCmdErrors: Boolean = true
 
     fun outputScheduler(scheduler: Scheduler): ProgramBuilder {
-        outputScheduler = scheduler
+        this.outputScheduler = scheduler
         return this
     }
 
@@ -21,8 +21,9 @@ class ProgramBuilder {
         return this
     }
 
-    fun handleCmdErrors(handle : Boolean){
-        handleCmdErrors = handle
+    fun handleCmdErrors(handle : Boolean) : ProgramBuilder{
+        this.handleCmdErrors = handle
+        return this
     }
 
     fun <S : State> build(): Program<S> {
