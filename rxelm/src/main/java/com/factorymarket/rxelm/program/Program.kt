@@ -5,6 +5,7 @@ import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.None
 import com.factorymarket.rxelm.cmd.SwitchCmd
 import com.factorymarket.rxelm.contract.Component
+import com.factorymarket.rxelm.contract.RenderableComponent
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.log.RxElmLogger
@@ -26,15 +27,15 @@ import java.util.ArrayDeque
  * All interactions happen in cycle:
  *
  * [Msg]
- * -> [update(Message, State)][Component.update] : [Pair]<[State], [Cmd]>
- * -> [render(State)][Component.render]
- * -> [call(Command)][Component.call]
+ * -> update(Message, State)[Component.update] : [Pair]<[State], [Cmd]>
+ * -> (Optional)render(State)[Component.render]
+ * -> call(Command)[Component.call]
  * -> [Msg].
  *
  *
  * Messages are being passed to [Program] using [accept(Message)][accept] method.
  *
- * Function [render()][Component.render] renders view in declarative stype according to [State].
+ * Function [render()][RenderableComponent.render] renders view in declarative style according to [State].
  * No other changes of View can happen outside of this function
  *
  * All changes of state must be made only in function [Update][Component.update], which is a pure function.
@@ -58,7 +59,8 @@ import java.util.ArrayDeque
 class Program<S : State> internal constructor(
     val outputScheduler: Scheduler,
     private val logger: RxElmLogger?,
-    private val handleCmdErrors: Boolean
+    private val handleCmdErrors: Boolean,
+    private val component: Component<S>
 ) {
 
     private val msgRelay: BehaviorRelay<Msg> = BehaviorRelay.create()
@@ -72,22 +74,16 @@ class Program<S : State> internal constructor(
     lateinit var state: S
         private set
 
-    private lateinit var component: Component<S>
     private var lock: Boolean = false
     var rxElmSubscriptions: RxElmSubscriptions<S>? = null
 
-    fun init(initialState: S, component: Component<S>): Disposable {
-        return init(initialState, component, null)
+    fun init(initialState: S, rxElmSubscriptions: RxElmSubscriptions<S>): Disposable {
+        this.rxElmSubscriptions = rxElmSubscriptions
+        return init(initialState)
     }
 
-    fun init(
-        initialState: S,
-        component: Component<S>,
-        rxElmSubscriptions: RxElmSubscriptions<S>?
-    ): Disposable {
-        this.component = component
+    fun init(initialState: S): Disposable {
         this.state = initialState
-        this.rxElmSubscriptions = rxElmSubscriptions
 
         val disposable = msgRelay
             .observeOn(outputScheduler)
@@ -96,14 +92,17 @@ class Program<S : State> internal constructor(
                     logger.log(this.state.javaClass.simpleName, "reduce msg:${msg.javaClass.simpleName} ")
                 }
                 val (newState, command) = component.update(msg, this.state)
-                this.state = newState
+
                 if (msgQueue.size > 0) {
                     msgQueue.removeFirst()
                 }
 
+                if (component is RenderableComponent && newState !== this.state) {
+                    component.render(newState)
+                }
+                this.state = newState
                 lock = false
-                component.render(this.state)
-                rxElmSubscriptions?.subscribe(this)
+                this.rxElmSubscriptions?.subscribe(this)
                 pickNextMessageFromQueue()
                 return@map command
             }
@@ -179,7 +178,9 @@ class Program<S : State> internal constructor(
     }
 
     fun render() {
-        component.render(this.state)
+        if (component is RenderableComponent) {
+            component.render(this.state)
+        }
     }
 
     fun accept(msg: Msg) {

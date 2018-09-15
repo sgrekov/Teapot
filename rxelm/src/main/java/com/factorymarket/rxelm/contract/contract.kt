@@ -21,11 +21,16 @@ interface Component<S : State> {
      */
     fun update(msg: Msg, state: S): Pair<S, Cmd>
 
-    /** Just render current state, no changes invoked */
-    fun render(state: S)
-
     /**
      * Execute given [Command][Cmd] and returns its answer as [Message][Msg]
      */
     fun call(cmd: Cmd): Single<Msg>
+}
+
+
+interface RenderableComponent<S : State> : Component<S> {
+
+    /** Just render current state, no changes invoked */
+    fun render(state: S)
+
 }
