@@ -1,6 +1,5 @@
 package com.factorymarket.rxelm.sample.main.view
 
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,15 +10,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.program.ProgramBuilder
-import com.factorymarket.rxelm.sample.navigation.AndroidNavigator
-import com.factorymarket.rxelm.sample.navigation.Navigator
 import com.factorymarket.rxelm.sample.R
 import com.factorymarket.rxelm.sample.SampleApp
-import com.factorymarket.rxelm.sample.data.AppPrefs
 import com.factorymarket.rxelm.sample.main.presenter.MainPresenter
 import io.reactivex.android.schedulers.AndroidSchedulers
 import org.eclipse.egit.github.core.Repository
+import timber.log.Timber
 
 class MainFragment : Fragment(), IMainView {
 
@@ -35,7 +33,16 @@ class MainFragment : Fragment(), IMainView {
             this,
             ProgramBuilder()
                 .outputScheduler(AndroidSchedulers.mainThread())
-                .build(),
+                .logger(object : RxElmLogger {
+                    override fun log(stateName: String, message: String) {
+                        Timber.tag(stateName).d(message)
+                    }
+
+                    override fun showLog(): Boolean {
+                        return true
+                    }
+
+                }),
             (activity?.application as SampleApp).service
         )
     }

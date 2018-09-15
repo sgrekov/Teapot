@@ -44,8 +44,7 @@ class LoginFragment : Fragment(), ILoginView {
         presenter = LoginPresenter(
             this,
             ProgramBuilder()
-                .outputScheduler(AndroidSchedulers.mainThread())
-                .build(),
+                .outputScheduler(AndroidSchedulers.mainThread()),
             AppPrefs(ctx.getSharedPreferences("prefs", Context.MODE_PRIVATE)),
             (activity?.application as SampleApp).service,
             AndroidNavigator(activity!!)

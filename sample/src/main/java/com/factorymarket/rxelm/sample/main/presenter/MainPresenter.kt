@@ -3,40 +3,40 @@ package com.factorymarket.rxelm.sample.main.presenter
 
 import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.None
-import com.factorymarket.rxelm.contract.Component
+import com.factorymarket.rxelm.contract.RenderableComponent
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.program.Program
+import com.factorymarket.rxelm.program.ProgramBuilder
 import com.factorymarket.rxelm.sample.data.GitHubService
+import com.factorymarket.rxelm.sample.main.model.LoadReposCmd
 import com.factorymarket.rxelm.sample.main.model.MainState
+import com.factorymarket.rxelm.sample.main.model.ReposLoadedMsg
 import com.factorymarket.rxelm.sample.main.view.IMainView
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
-import org.eclipse.egit.github.core.Repository
 
 class MainPresenter(
     val view: IMainView,
-    val program: Program<MainState>,
+    programBuilder: ProgramBuilder,
     val service: GitHubService
-) : Component<MainState> {
-
-    data class LoadReposCmd(val userName: String) : Cmd()
-
-    data class ReposLoadedMsg(val reposList: List<Repository>) : Msg()
+) : RenderableComponent<MainState> {
 
     lateinit var disposable: Disposable
 
+    private val program : Program<MainState> = programBuilder.build(this)
+
     fun init(initialState: MainState?) {
         disposable =
-                program.init(initialState ?: MainState(userName = service.getUserName()), this)
+                program.init(initialState ?: MainState(userName = service.getUserName()))
 
         initialState ?: program.accept(Init) //if no saved state, then run init Msg
     }
 
     override fun update(msg: Msg, state: MainState): Pair<MainState, Cmd> {
         return when (msg) {
-            is Init -> state to LoadReposCmd(state.userName)
+            is Init -> state.copy(isLoading = true) to LoadReposCmd(state.userName)
             is ReposLoadedMsg -> state.copy(isLoading = false, reposList = msg.reposList) to None
             else -> state to None
         }

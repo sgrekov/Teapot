@@ -3,11 +3,13 @@ package com.factorymarket.rxelm.sample.login.presenter
 import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.None
 import com.factorymarket.rxelm.contract.Component
+import com.factorymarket.rxelm.contract.RenderableComponent
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.program.Program
 import com.factorymarket.rxelm.msg.Idle
+import com.factorymarket.rxelm.program.ProgramBuilder
 import com.factorymarket.rxelm.sample.navigation.Navigator
 import com.factorymarket.rxelm.sample.data.IApiService
 import com.factorymarket.rxelm.sample.data.IAppPrefs
@@ -33,16 +35,18 @@ import timber.log.Timber
 
 class LoginPresenter(
     private val loginView: ILoginView,
-    private val program: Program<LoginState>,
+    programBuilder: ProgramBuilder,
     private val appPrefs: IAppPrefs,
     private val apiService: IApiService,
     private val navigator: Navigator
-) : Component<LoginState> {
+) : RenderableComponent<LoginState> {
 
     var programDisposable: Disposable
 
+    private val program: Program<LoginState>  = programBuilder.build(this)
+
     init {
-        programDisposable = program.init(LoginState(), this)
+        programDisposable = program.init(LoginState())
     }
 
     fun init() {
