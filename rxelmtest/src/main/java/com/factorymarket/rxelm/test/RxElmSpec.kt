@@ -59,6 +59,13 @@ class RxElmSpec<S : State> constructor(val component: Component<S>) {
         return this
     }
 
+    fun thenCmdBatchContains(vararg cmds: Cmd): RxElmSpec<S> {
+        cmds.forEach {
+            Assert.assertTrue((this.cmd as BatchCmd).cmds.contains(it))
+        }
+        return this
+    }
+
     fun assertCmds(assert: (cmds: BatchCmd) -> Unit): RxElmSpec<S> {
         assert.invoke(this.cmd as BatchCmd)
         return this
