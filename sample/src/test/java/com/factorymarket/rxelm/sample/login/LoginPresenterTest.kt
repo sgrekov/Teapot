@@ -27,7 +27,7 @@ class LoginPresenterTest {
     lateinit var view: ILoginView
     lateinit var loginService: IApiService
     lateinit var prefs: IAppPrefs
-    lateinit var program: Program<LoginState>
+    lateinit var programBuilder: ProgramBuilder
     lateinit var spec : RxElmSpec<LoginState>
 
     @Before
@@ -35,8 +35,8 @@ class LoginPresenterTest {
         view = mock(ILoginView::class.java)
         loginService = mock(IApiService::class.java)
         prefs = mock(IAppPrefs::class.java)
-        program = ProgramBuilder().outputScheduler(Schedulers.trampoline()).build()
-        presenter = LoginPresenter(view, program, prefs, loginService, mock(Navigator::class.java))
+        programBuilder = ProgramBuilder().outputScheduler(Schedulers.trampoline())
+        presenter = LoginPresenter(view, programBuilder, prefs, loginService, mock(Navigator::class.java))
         spec = RxElmSpec(presenter).withState(LoginState())
     }
 

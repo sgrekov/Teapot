@@ -37,11 +37,6 @@ class MainFragment : Fragment(), IMainView {
                     override fun log(stateName: String, message: String) {
                         Timber.tag(stateName).d(message)
                     }
-
-                    override fun showLog(): Boolean {
-                        return true
-                    }
-
                 }),
             (activity?.application as SampleApp).service
         )
