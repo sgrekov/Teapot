@@ -8,14 +8,14 @@ Unidirectional Dataflow library for Android inspired by The Elm Architecture.
 ## Dependency
 
 ```
-implementation 'com.factorymarket.rxelm:rxelm:0.1.0'
+implementation 'com.factorymarket.rxelm:rxelm:0.2.0'
 //Testing utility
 testImplementation 'com.factorymarket.rxelm:rxelm-test:0.1.0'
 ```
 
 
 #### Snapshot
-Use `0.2.0-SNAPSHOT` as your version number and add the url to the snapshot repository:
+Use `0.3.0-SNAPSHOT` as your version number and add the url to the snapshot repository:
 
 ```
 allprojects {
@@ -27,7 +27,7 @@ allprojects {
 ```
 
 ```
-implementation 'com.factorymarket.rxelm:rxelm:0.2.0-SNAPSHOT'
+implementation 'com.factorymarket.rxelm:rxelm:0.3.0-SNAPSHOT'
 ```
 
 
@@ -65,7 +65,7 @@ Function render() takes State as an input, and renders view in declarative manne
 ### Minimal implementation
 
 ```kotlin
-class MyFragment : Fragment(), Component {
+class MyFragment : Fragment(), RenderableComponent {
 
   
     private lateinit var plusBtn: Button
