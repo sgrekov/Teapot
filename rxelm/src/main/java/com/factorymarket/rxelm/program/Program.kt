@@ -88,7 +88,7 @@ class Program<S : State> internal constructor(
         val disposable = msgRelay
             .observeOn(outputScheduler)
             .map { msg ->
-                if (logger?.showLog() == true) {
+                logger?.let {
                     logger.log(this.state.javaClass.simpleName, "reduce msg:${msg.javaClass.simpleName} ")
                 }
                 val (newState, command) = component.update(msg, this.state)
@@ -116,14 +116,14 @@ class Program<S : State> internal constructor(
             }
 
         handleResponse(cmdRelay.flatMap { cmd ->
-            if (logger?.showLog() == true) {
+            logger?.let {
                 logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
             }
             call(cmd).subscribeOn(Schedulers.io())
         })
 
         handleResponse(switchRelay.switchMap { cmd ->
-            if (logger?.showLog() == true) {
+            logger?.let {
                 logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
             }
             call(cmd).subscribeOn(Schedulers.io())
@@ -168,7 +168,7 @@ class Program<S : State> internal constructor(
 
 
     private fun pickNextMessageFromQueue() {
-        if (logger?.showLog() == true) {
+        logger?.let {
             logger.log(this.state.javaClass.simpleName, "pickNextMessageFromQueue, queue size:${msgQueue.size}")
         }
         if (!lock && msgQueue.size > 0) {
@@ -184,7 +184,7 @@ class Program<S : State> internal constructor(
     }
 
     fun accept(msg: Msg) {
-        if (logger?.showLog() == true) {
+        logger?.let {
             logger.log(
                 this.state.javaClass.simpleName,
                 "accept msg: ${msg.javaClass.simpleName}, queue size:${msgQueue.size} lock:$lock "

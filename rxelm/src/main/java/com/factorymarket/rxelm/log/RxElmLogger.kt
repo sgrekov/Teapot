@@ -8,6 +8,4 @@ interface RxElmLogger {
      */
     fun log(stateName : String, message : String)
 
-    fun showLog() : Boolean
-
 }
