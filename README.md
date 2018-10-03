@@ -15,7 +15,7 @@ testImplementation 'com.factorymarket.rxelm:rxelm-test:0.2.0'
 
 
 #### Snapshot
-Use `0.3.0-SNAPSHOT` as your version number and add the url to the snapshot repository:
+Use `0.4.0-SNAPSHOT` as your version number and add the url to the snapshot repository:
 
 ```
 allprojects {
