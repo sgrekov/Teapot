@@ -8,6 +8,7 @@ import com.factorymarket.rxelm.contract.Component
 import com.factorymarket.rxelm.contract.RenderableComponent
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.contract.State
+import com.factorymarket.rxelm.log.LogType
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.msg.Idle
@@ -86,14 +87,14 @@ class Program<S : State> internal constructor(
         loopDisposable = createLoop(component, logger)
 
         handleResponse(cmdRelay.flatMap { cmd ->
-            logger?.let {
+            logger?.takeIf { logger.logType() == LogType.All || logger.logType() == LogType.Commands }?.let {
                 logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
             }
             call(cmd).subscribeOn(Schedulers.io())
         })
 
         handleResponse(switchRelay.switchMap { cmd ->
-            logger?.let {
+            logger?.takeIf { logger.logType() == LogType.All || logger.logType() == LogType.Commands }?.let {
                 logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
             }
             call(cmd).subscribeOn(Schedulers.io())
@@ -102,13 +103,17 @@ class Program<S : State> internal constructor(
         accept(initialMsg)
     }
 
-    @Deprecated(message = "deprecated", replaceWith = ReplaceWith("run"), level = DeprecationLevel.WARNING)
+    @Deprecated(message = "deprecated", replaceWith = ReplaceWith("program.run(initialState, rxElmSubscriptions)"), level = DeprecationLevel.WARNING)
     fun init(initialState: S, rxElmSubscriptions: RxElmSubscriptions<S>): Disposable {
         this.rxElmSubscriptions = rxElmSubscriptions
         return init(initialState)
     }
 
-    @Deprecated(message = "deprecated", replaceWith = ReplaceWith("program.run(initialState)"), level = DeprecationLevel.WARNING)
+    @Deprecated(
+        message = "deprecated",
+        replaceWith = ReplaceWith("program.run(initialState)"),
+        level = DeprecationLevel.WARNING
+    )
     fun init(initialState: S): Disposable {
         this.state = initialState
 
@@ -138,7 +143,7 @@ class Program<S : State> internal constructor(
         return msgRelay
             .observeOn(outputScheduler)
             .map { msg ->
-                logger?.let {
+                logger?.takeIf { logger.logType() == LogType.All || logger.logType() == LogType.Updates }?.let {
                     logger.log(
                         this.state.javaClass.simpleName,
                         "reduce msg:${msg.javaClass.simpleName} "
@@ -195,7 +200,10 @@ class Program<S : State> internal constructor(
     private fun cmdCall(cmd: Cmd): Observable<Msg> {
         return if (handleCmdErrors) {
             component.call(cmd)
-                .onErrorResumeNext { err -> Single.just(ErrorMsg(err, cmd)) }
+                .onErrorResumeNext { err ->
+                    logger?.error(err)
+                    Single.just(ErrorMsg(err, cmd))
+                }
                 .toObservable()
         } else {
             component.call(cmd)
@@ -205,7 +213,7 @@ class Program<S : State> internal constructor(
 
 
     private fun pickNextMessageFromQueue() {
-        logger?.let {
+        logger?.takeIf { logger.logType() == LogType.All}?.let {
             logger.log(
                 this.state.javaClass.simpleName,
                 "pickNextMessageFromQueue, queue size:${msgQueue.size}"
@@ -224,7 +232,7 @@ class Program<S : State> internal constructor(
     }
 
     fun accept(msg: Msg) {
-        logger?.let {
+        logger?.takeIf { logger.logType() == LogType.All }?.let {
             logger.log(
                 this.state.javaClass.simpleName,
                 "accept msg: ${msg.javaClass.simpleName}, queue size:${msgQueue.size} lock:$lock "
