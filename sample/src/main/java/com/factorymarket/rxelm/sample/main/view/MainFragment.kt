@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.factorymarket.rxelm.log.LogType
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.program.ProgramBuilder
 import com.factorymarket.rxelm.sample.R
@@ -34,6 +35,15 @@ class MainFragment : Fragment(), IMainView {
             ProgramBuilder()
                 .outputScheduler(AndroidSchedulers.mainThread())
                 .logger(object : RxElmLogger {
+
+                    override fun logType(): LogType {
+                        return LogType.Updates
+                    }
+
+                    override fun error(t: Throwable) {
+                        Timber.e(t)
+                    }
+
                     override fun log(stateName: String, message: String) {
                         Timber.tag(stateName).d(message)
                     }

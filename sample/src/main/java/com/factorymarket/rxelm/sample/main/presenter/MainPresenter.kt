@@ -15,7 +15,6 @@ import com.factorymarket.rxelm.sample.main.model.MainState
 import com.factorymarket.rxelm.sample.main.model.ReposLoadedMsg
 import com.factorymarket.rxelm.sample.main.view.IMainView
 import io.reactivex.Single
-import io.reactivex.disposables.Disposable
 
 class MainPresenter(
     val view: IMainView,
@@ -23,15 +22,10 @@ class MainPresenter(
     val service: GitHubService
 ) : RenderableComponent<MainState> {
 
-    lateinit var disposable: Disposable
-
     private val program : Program<MainState> = programBuilder.build(this)
 
     fun init(initialState: MainState?) {
-        disposable =
-                program.init(initialState ?: MainState(userName = service.getUserName()))
-
-        initialState ?: program.accept(Init) //if no saved state, then run init Msg
+        program.run(initialState ?: MainState(userName = service.getUserName()))
     }
 
     override fun update(msg: Msg, state: MainState): Pair<MainState, Cmd> {
@@ -69,7 +63,7 @@ class MainPresenter(
     }
 
     fun destroy() {
-        disposable.dispose()
+        program.stop()
     }
 
     fun getState(): MainState {

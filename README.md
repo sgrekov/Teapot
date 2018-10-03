@@ -8,9 +8,9 @@ Unidirectional Dataflow library for Android inspired by The Elm Architecture.
 ## Dependency
 
 ```
-implementation 'com.factorymarket.rxelm:rxelm:0.2.0'
+implementation 'com.factorymarket.rxelm:rxelm:0.3.0'
 //Testing utility
-testImplementation 'com.factorymarket.rxelm:rxelm-test:0.1.0'
+testImplementation 'com.factorymarket.rxelm:rxelm-test:0.2.0'
 ```
 
 
@@ -27,7 +27,7 @@ allprojects {
 ```
 
 ```
-implementation 'com.factorymarket.rxelm:rxelm:0.3.0-SNAPSHOT'
+implementation 'com.factorymarket.rxelm:rxelm:0.4.0-SNAPSHOT'
 ```
 
 
@@ -70,8 +70,7 @@ class MyFragment : Fragment(), RenderableComponent {
   
     private lateinit var plusBtn: Button
     private lateinit var minusBtn: Button
-    private lateinit var counterText: TextView
-    private lateinit var programDisposable: Disposable
+    private lateinit var counterText: TextView   
     
     data class IncrementDecrementState(val value: Int = 0) : State()
     
@@ -86,15 +85,13 @@ class MyFragment : Fragment(), RenderableComponent {
 
         val program = ProgramBuilder()
                         .outputScheduler(AndroidSchedulers.mainThread())
-                        .build()
+                        .build(this)
                         
         plusBtn = view.findViewById(R.id.plus_btn)
         minusBtn = view.findViewById(R.id.minus_btn)
         counterText = view.findViewById(R.id.counter_text)
                
-        programDisposable = program.init(
-            IncrementDecrementState(value = savedInstanceState?.getInt("counter", 0) ?: 0), 
-            this)                
+        program.run(initialState = IncrementDecrementState(value = savedInstanceState?.getInt("counter", 0) ?: 0))              
     }
     
     override fun update(msg: Msg, state: counterText): Pair<State, Cmd> {          
@@ -125,7 +122,7 @@ class MyFragment : Fragment(), RenderableComponent {
     @Override
     fun onDestroyView() {
       super.onDestroyView()
-      programDisposable.dispose()
+      program.stop()
     }
     
 }

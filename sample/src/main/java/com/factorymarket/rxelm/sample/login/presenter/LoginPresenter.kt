@@ -4,6 +4,8 @@ import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.None
 import com.factorymarket.rxelm.contract.Component
 import com.factorymarket.rxelm.contract.RenderableComponent
+import com.factorymarket.rxelm.log.LogType
+import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.msg.Msg
@@ -41,18 +43,27 @@ class LoginPresenter(
     private val navigator: Navigator
 ) : RenderableComponent<LoginState> {
 
-    var programDisposable: Disposable
+    private val program: Program<LoginState> = programBuilder
+        .logger(object : RxElmLogger {
 
-    private val program: Program<LoginState>  = programBuilder.build(this)
+            override fun logType(): LogType {
+                return LogType.Updates
+            }
 
-    init {
-        programDisposable = program.init(LoginState())
-    }
+            override fun error(t: Throwable) {
+                Timber.e(t)
+            }
+
+            override fun log(stateName: String, message: String) {
+                Timber.tag(stateName).d(message)
+            }
+
+        })
+        .build(this)
 
     fun init() {
-        program.accept(Init)
+        program.run(initialState = LoginState())
     }
-
 
     override fun update(msg: Msg, state: LoginState): Pair<LoginState, Cmd> {
         return when (msg) {
@@ -174,6 +185,6 @@ class LoginPresenter(
     }
 
     fun destroy() {
-        programDisposable.dispose()
+        program.stop()
     }
 }
