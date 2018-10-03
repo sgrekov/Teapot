@@ -11,6 +11,7 @@ import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.msg.Idle
+import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.sub.RxElmSubscriptions
 import com.jakewharton.rxrelay2.BehaviorRelay
 import io.reactivex.Observable
@@ -76,20 +77,72 @@ class Program<S : State> internal constructor(
 
     private var lock: Boolean = false
     var rxElmSubscriptions: RxElmSubscriptions<S>? = null
+    var loopDisposable: Disposable? = null
 
+    fun run(initialState: S, rxElmSubscriptions: RxElmSubscriptions<S>? = null, initialMsg: Msg = Init) {
+        this.state = initialState
+        this.rxElmSubscriptions = rxElmSubscriptions
+
+        loopDisposable = createLoop(component, logger)
+
+        handleResponse(cmdRelay.flatMap { cmd ->
+            logger?.let {
+                logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
+            }
+            call(cmd).subscribeOn(Schedulers.io())
+        })
+
+        handleResponse(switchRelay.switchMap { cmd ->
+            logger?.let {
+                logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
+            }
+            call(cmd).subscribeOn(Schedulers.io())
+        })
+
+        accept(initialMsg)
+    }
+
+    @Deprecated(message = "deprecated", replaceWith = ReplaceWith("run"), level = DeprecationLevel.WARNING)
     fun init(initialState: S, rxElmSubscriptions: RxElmSubscriptions<S>): Disposable {
         this.rxElmSubscriptions = rxElmSubscriptions
         return init(initialState)
     }
 
+    @Deprecated(message = "deprecated", replaceWith = ReplaceWith("program.run(initialState)"), level = DeprecationLevel.WARNING)
     fun init(initialState: S): Disposable {
         this.state = initialState
 
-        val disposable = msgRelay
+        val disposable = createLoop(component, logger)
+
+        handleResponse(cmdRelay.flatMap { cmd ->
+            logger?.let {
+                logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
+            }
+            call(cmd).subscribeOn(Schedulers.io())
+        })
+
+        handleResponse(switchRelay.switchMap { cmd ->
+            logger?.let {
+                logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
+            }
+            call(cmd).subscribeOn(Schedulers.io())
+        })
+
+        return disposable
+    }
+
+    fun createLoop(
+        component: Component<S>,
+        logger: RxElmLogger?
+    ): Disposable {
+        return msgRelay
             .observeOn(outputScheduler)
             .map { msg ->
                 logger?.let {
-                    logger.log(this.state.javaClass.simpleName, "reduce msg:${msg.javaClass.simpleName} ")
+                    logger.log(
+                        this.state.javaClass.simpleName,
+                        "reduce msg:${msg.javaClass.simpleName} "
+                    )
                 }
                 val (newState, command) = component.update(msg, this.state)
 
@@ -114,22 +167,6 @@ class Program<S : State> internal constructor(
                     cmdRelay.accept(cmd)
                 }
             }
-
-        handleResponse(cmdRelay.flatMap { cmd ->
-            logger?.let {
-                logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
-            }
-            call(cmd).subscribeOn(Schedulers.io())
-        })
-
-        handleResponse(switchRelay.switchMap { cmd ->
-            logger?.let {
-                logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
-            }
-            call(cmd).subscribeOn(Schedulers.io())
-        })
-
-        return disposable
     }
 
     private fun handleResponse(observable: Observable<Msg>) {
@@ -169,7 +206,10 @@ class Program<S : State> internal constructor(
 
     private fun pickNextMessageFromQueue() {
         logger?.let {
-            logger.log(this.state.javaClass.simpleName, "pickNextMessageFromQueue, queue size:${msgQueue.size}")
+            logger.log(
+                this.state.javaClass.simpleName,
+                "pickNextMessageFromQueue, queue size:${msgQueue.size}"
+            )
         }
         if (!lock && msgQueue.size > 0) {
             lock = true
@@ -201,7 +241,16 @@ class Program<S : State> internal constructor(
         return eventSource.subscribe { msg -> accept(msg) }
     }
 
+    @Deprecated(message = "deprecated", replaceWith = ReplaceWith("stop"), level = DeprecationLevel.WARNING)
     fun dispose() {
         rxElmSubscriptions?.dispose()
     }
+
+    fun stop() {
+        if (loopDisposable?.isDisposed == false) {
+            loopDisposable?.dispose()
+        }
+        rxElmSubscriptions?.dispose()
+    }
+
 }
