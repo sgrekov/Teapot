@@ -69,16 +69,15 @@ class Program<S : State> internal constructor(
     private val cmdRelay: BehaviorRelay<Cmd> = BehaviorRelay.create()
     private val switchRelay: BehaviorRelay<SwitchCmd> = BehaviorRelay.create()
 
-    // Here messages are kept until they can be passed to msgRelay
+    /** Here messages are kept until they can be passed to msgRelay */
     private var msgQueue = ArrayDeque<Msg>()
 
     /** State at this moment */
-    lateinit var state: S
-        private set
+    private lateinit var state: S
 
     private var lock: Boolean = false
-    var rxElmSubscriptions: RxElmSubscriptions<S>? = null
-    var loopDisposable: Disposable? = null
+    private var rxElmSubscriptions: RxElmSubscriptions<S>? = null
+    private var loopDisposable: Disposable? = null
 
     fun run(initialState: S, rxElmSubscriptions: RxElmSubscriptions<S>? = null, initialMsg: Msg = Init) {
         this.state = initialState
@@ -103,7 +102,11 @@ class Program<S : State> internal constructor(
         accept(initialMsg)
     }
 
-    @Deprecated(message = "deprecated", replaceWith = ReplaceWith("program.run(initialState, rxElmSubscriptions)"), level = DeprecationLevel.WARNING)
+    @Deprecated(
+        message = "deprecated",
+        replaceWith = ReplaceWith("program.run(initialState, rxElmSubscriptions)"),
+        level = DeprecationLevel.WARNING
+    )
     fun init(initialState: S, rxElmSubscriptions: RxElmSubscriptions<S>): Disposable {
         this.rxElmSubscriptions = rxElmSubscriptions
         return init(initialState)
@@ -143,25 +146,20 @@ class Program<S : State> internal constructor(
         return msgRelay
             .observeOn(outputScheduler)
             .map { msg ->
-                logger?.takeIf { logger.logType() == LogType.All || logger.logType() == LogType.Updates }?.let {
-                    logger.log(
-                        this.state.javaClass.simpleName,
-                        "reduce msg:${msg.javaClass.simpleName} "
-                    )
-                }
-                val (newState, command) = component.update(msg, this.state)
 
-                if (msgQueue.size > 0) {
-                    msgQueue.removeFirst()
-                }
+                val (newState, command) = update(msg, component, logger)
 
                 if (component is RenderableComponent && newState !== this.state) {
                     component.render(newState)
                 }
+
                 this.state = newState
                 lock = false
-                this.rxElmSubscriptions?.subscribe(this)
+
+                this.rxElmSubscriptions?.subscribe(this, newState)
+
                 pickNextMessageFromQueue()
+
                 return@map command
             }
             .filter { cmd -> cmd !== None }
@@ -172,6 +170,22 @@ class Program<S : State> internal constructor(
                     cmdRelay.accept(cmd)
                 }
             }
+    }
+
+    private fun update(msg: Msg, component: Component<S>, logger: RxElmLogger?): Pair<S, Cmd> {
+        logger?.takeIf { logger.logType() == LogType.All || logger.logType() == LogType.Updates }?.let {
+            logger.log(
+                this.state.javaClass.simpleName,
+                "reduce msg:${msg.javaClass.simpleName} "
+            )
+        }
+        val updateResult = component.update(msg, this.state)
+
+        if (msgQueue.size > 0) {
+            msgQueue.removeFirst()
+        }
+
+        return updateResult
     }
 
     private fun handleResponse(observable: Observable<Msg>) {
@@ -213,7 +227,7 @@ class Program<S : State> internal constructor(
 
 
     private fun pickNextMessageFromQueue() {
-        logger?.takeIf { logger.logType() == LogType.All}?.let {
+        logger?.takeIf { logger.logType() == LogType.All }?.let {
             logger.log(
                 this.state.javaClass.simpleName,
                 "pickNextMessageFromQueue, queue size:${msgQueue.size}"
@@ -245,11 +259,17 @@ class Program<S : State> internal constructor(
         }
     }
 
+    fun getState(): S? {
+        return if (this::state.isInitialized) {
+            state
+        } else null
+    }
+
     fun addEventObservable(eventSource: Observable<Msg>): Disposable {
         return eventSource.subscribe { msg -> accept(msg) }
     }
 
-    @Deprecated(message = "deprecated", replaceWith = ReplaceWith("stop"), level = DeprecationLevel.WARNING)
+    @Deprecated(message = "deprecated", replaceWith = ReplaceWith("program.stop()"), level = DeprecationLevel.WARNING)
     fun dispose() {
         rxElmSubscriptions?.dispose()
     }

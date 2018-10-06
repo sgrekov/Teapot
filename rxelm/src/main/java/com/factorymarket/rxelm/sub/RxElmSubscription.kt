@@ -53,8 +53,9 @@ class RxElmSubscriptions<S : State> {
      *
      * If it is, subscribes them if not - just delete.
      */
-    fun subscribe(program: Program<S>) {
-        moveConditionalSubsToSubsIfTheyMatchPredicate(program.state)
+    fun subscribe(program: Program<S>, state: S) {
+        moveConditionalSubsToSubsIfTheyMatchPredicate(state)
+
         if (subs.isEmpty()) {
             return
         }

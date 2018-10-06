@@ -66,12 +66,4 @@ class MainPresenter(
         program.stop()
     }
 
-    fun getState(): MainState {
-        return program.state
-    }
-
-    fun render() {
-        program.render()
-    }
-
 }
