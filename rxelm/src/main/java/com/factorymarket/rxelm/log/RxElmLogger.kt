@@ -1,7 +1,7 @@
 package com.factorymarket.rxelm.log
 
 enum class LogType {
-    All, Updates, Commands, None
+    All, Updates, Commands, UpdatesAndCommands, None
 }
 
 interface RxElmLogger {

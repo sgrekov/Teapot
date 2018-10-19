@@ -87,14 +87,22 @@ class Program<S : State> internal constructor(
         disposables.add(createLoop(component, logger))
 
         disposables.add(handleResponse(cmdRelay.flatMap { cmd ->
-            logger?.takeIf { logger.logType() == LogType.All || logger.logType() == LogType.Commands }?.let {
+            logger?.takeIf {
+                logger.logType() == LogType.All
+                        || logger.logType() == LogType.Commands
+                        || logger.logType() == LogType.UpdatesAndCommands
+            }?.let {
                 logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
             }
             call(cmd).subscribeOn(Schedulers.io())
         }))
 
         disposables.add(handleResponse(switchRelay.switchMap { cmd ->
-            logger?.takeIf { logger.logType() == LogType.All || logger.logType() == LogType.Commands }?.let {
+            logger?.takeIf {
+                logger.logType() == LogType.All
+                        || logger.logType() == LogType.Commands
+                        || logger.logType() == LogType.UpdatesAndCommands
+            }?.let {
                 logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
             }
             call(cmd).subscribeOn(Schedulers.io())
@@ -103,47 +111,7 @@ class Program<S : State> internal constructor(
         accept(initialMsg)
     }
 
-    @Deprecated(
-        message = "deprecated",
-        replaceWith = ReplaceWith("program.run(initialState, rxElmSubscriptions)"),
-        level = DeprecationLevel.WARNING
-    )
-    fun init(initialState: S, rxElmSubscriptions: RxElmSubscriptions<S>): Disposable {
-        this.rxElmSubscriptions = rxElmSubscriptions
-        return init(initialState)
-    }
-
-    @Deprecated(
-        message = "deprecated",
-        replaceWith = ReplaceWith("program.run(initialState)"),
-        level = DeprecationLevel.WARNING
-    )
-    fun init(initialState: S): Disposable {
-        this.state = initialState
-
-        val disposable = createLoop(component, logger)
-
-        handleResponse(cmdRelay.flatMap { cmd ->
-            logger?.let {
-                logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
-            }
-            call(cmd).subscribeOn(Schedulers.io())
-        })
-
-        handleResponse(switchRelay.switchMap { cmd ->
-            logger?.let {
-                logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
-            }
-            call(cmd).subscribeOn(Schedulers.io())
-        })
-
-        return disposable
-    }
-
-    fun createLoop(
-        component: Component<S>,
-        logger: RxElmLogger?
-    ): Disposable {
+    fun createLoop(component: Component<S>, logger: RxElmLogger?): Disposable {
         return msgRelay
             .observeOn(outputScheduler)
             .map { msg ->
@@ -174,10 +142,14 @@ class Program<S : State> internal constructor(
     }
 
     private fun update(msg: Msg, component: Component<S>, logger: RxElmLogger?): Pair<S, Cmd> {
-        logger?.takeIf { logger.logType() == LogType.All || logger.logType() == LogType.Updates }?.let {
+        logger?.takeIf {
+            logger.logType() == LogType.All
+                    || logger.logType() == LogType.Updates
+                    || logger.logType() == LogType.UpdatesAndCommands
+        }?.let {
             logger.log(
                 this.state.javaClass.simpleName,
-                "reduce msg:${msg.javaClass.simpleName} "
+                "update with msg:${msg.javaClass.simpleName} "
             )
         }
         val updateResult = component.update(msg, this.state)
@@ -268,11 +240,6 @@ class Program<S : State> internal constructor(
 
     fun addEventObservable(eventSource: Observable<Msg>): Disposable {
         return eventSource.subscribe { msg -> accept(msg) }
-    }
-
-    @Deprecated(message = "deprecated", replaceWith = ReplaceWith("program.stop()"), level = DeprecationLevel.WARNING)
-    fun dispose() {
-        rxElmSubscriptions?.dispose()
     }
 
     fun stop() {
