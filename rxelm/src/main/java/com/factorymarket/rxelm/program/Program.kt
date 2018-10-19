@@ -18,6 +18,7 @@ import com.jakewharton.rxrelay2.BehaviorRelay
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.Single
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import java.util.ArrayDeque
@@ -77,27 +78,27 @@ class Program<S : State> internal constructor(
 
     private var lock: Boolean = false
     private var rxElmSubscriptions: RxElmSubscriptions<S>? = null
-    private var loopDisposable: Disposable? = null
+    private var disposables: CompositeDisposable = CompositeDisposable()
 
     fun run(initialState: S, rxElmSubscriptions: RxElmSubscriptions<S>? = null, initialMsg: Msg = Init) {
         this.state = initialState
         this.rxElmSubscriptions = rxElmSubscriptions
 
-        loopDisposable = createLoop(component, logger)
+        disposables.add(createLoop(component, logger))
 
-        handleResponse(cmdRelay.flatMap { cmd ->
+        disposables.add(handleResponse(cmdRelay.flatMap { cmd ->
             logger?.takeIf { logger.logType() == LogType.All || logger.logType() == LogType.Commands }?.let {
                 logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
             }
             call(cmd).subscribeOn(Schedulers.io())
-        })
+        }))
 
-        handleResponse(switchRelay.switchMap { cmd ->
+        disposables.add(handleResponse(switchRelay.switchMap { cmd ->
             logger?.takeIf { logger.logType() == LogType.All || logger.logType() == LogType.Commands }?.let {
                 logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
             }
             call(cmd).subscribeOn(Schedulers.io())
-        })
+        }))
 
         accept(initialMsg)
     }
@@ -188,8 +189,8 @@ class Program<S : State> internal constructor(
         return updateResult
     }
 
-    private fun handleResponse(observable: Observable<Msg>) {
-        observable.observeOn(outputScheduler)
+    private fun handleResponse(observable: Observable<Msg>): Disposable {
+        return observable.observeOn(outputScheduler)
             .subscribe { msg ->
                 when (msg) {
                     is Idle -> {
@@ -204,9 +205,9 @@ class Program<S : State> internal constructor(
     fun call(cmd: Cmd): Observable<Msg> {
         return when (cmd) {
             is BatchCmd ->
-                Observable.merge(cmd.cmds.map {
+                Observable.merge(cmd.cmds.asSequence().filter { it !is None }.map {
                     cmdCall(it)
-                })
+                }.toList())
             else -> cmdCall(cmd)
         }
     }
@@ -275,8 +276,8 @@ class Program<S : State> internal constructor(
     }
 
     fun stop() {
-        if (loopDisposable?.isDisposed == false) {
-            loopDisposable?.dispose()
+        if (!disposables.isDisposed) {
+            disposables.dispose()
         }
         rxElmSubscriptions?.dispose()
     }
