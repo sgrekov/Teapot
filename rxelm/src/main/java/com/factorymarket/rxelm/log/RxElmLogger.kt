@@ -1,7 +1,19 @@
 package com.factorymarket.rxelm.log
 
 enum class LogType {
-    All, Updates, Commands, UpdatesAndCommands, None
+    All, Updates, Commands, UpdatesAndCommands, None;
+
+    fun needToShowCommands() : Boolean {
+        return this == LogType.All
+                || this == LogType.Commands
+                || this == LogType.UpdatesAndCommands
+    }
+
+    fun needToShowUpdates() : Boolean {
+        return this == LogType.All
+                || this == LogType.Updates
+                || this == LogType.UpdatesAndCommands
+    }
 }
 
 interface RxElmLogger {
