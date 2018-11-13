@@ -54,7 +54,7 @@ class RxElmSpec<S : State> constructor(val component: Component<S>) {
     }
 
     fun thenCmdBatch(vararg cmds: Cmd): RxElmSpec<S> {
-        Assert.assertEquals(cmds.size, (this.cmd as BatchCmd).cmds.size)
+        Assert.assertEquals((this.cmd as BatchCmd).cmds.size, cmds.size)
         Assert.assertEquals(this.cmd, BatchCmd(cmds = cmds.toMutableSet()))
         return this
     }
@@ -82,17 +82,17 @@ class RxElmSpec<S : State> constructor(val component: Component<S>) {
 
     /** Asserts that state is exactly like [state] */
     fun andHasExactState(state: S): RxElmSpec<S> {
-        Assert.assertEquals(this.state, state)
+        Assert.assertEquals(state, this.state)
         return this
     }
 
     fun assertState(transform: (s: S) -> S): RxElmSpec<S> {
-        Assert.assertEquals(state,transform(state))
+        Assert.assertEquals(transform(state), state)
         return this.withState(state)
     }
 
     fun diffState(transform: (prevState: S) -> S): RxElmSpec<S> {
-        Assert.assertEquals(state, transform(prevState!!))
+        Assert.assertEquals(transform(prevState!!), state)
         return this.withState(state)
     }
 
