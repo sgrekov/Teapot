@@ -34,8 +34,9 @@ import io.reactivex.Single
 import io.reactivex.disposables.Disposable
 import org.eclipse.egit.github.core.client.RequestException
 import timber.log.Timber
+import javax.inject.Inject
 
-class LoginPresenter(
+class LoginPresenter @Inject constructor(
     private val loginView: ILoginView,
     programBuilder: ProgramBuilder,
     private val appPrefs: IAppPrefs,
@@ -43,23 +44,7 @@ class LoginPresenter(
     private val navigator: Navigator
 ) : RenderableComponent<LoginState> {
 
-    private val program: Program<LoginState> = programBuilder
-        .logger(object : RxElmLogger {
-
-            override fun logType(): LogType {
-                return LogType.Updates
-            }
-
-            override fun error(t: Throwable) {
-                Timber.e(t)
-            }
-
-            override fun log(stateName: String, message: String) {
-                Timber.tag(stateName).d(message)
-            }
-
-        })
-        .build(this)
+    private val program: Program<LoginState> = programBuilder.build(this)
 
     fun init() {
         program.run(initialState = LoginState())

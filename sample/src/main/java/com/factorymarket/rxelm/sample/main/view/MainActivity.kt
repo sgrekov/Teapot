@@ -4,13 +4,22 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.factorymarket.rxelm.sample.LOGIN_TAG
 import com.factorymarket.rxelm.sample.R
+import com.factorymarket.rxelm.sample.SampleApp
 import com.factorymarket.rxelm.sample.login.view.LoginFragment
+import com.factorymarket.rxelm.sample.main.di.ActivityComponent
+import com.factorymarket.rxelm.sample.main.di.ActivityModule
 
-class MainActivity : AppCompatActivity(){
+class MainActivity : AppCompatActivity() {
+
+    lateinit var activityComponent: ActivityComponent
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.login_main)
+
+        activityComponent = (application as SampleApp)
+            .appComponent
+            .plusActivityComponent(ActivityModule(this))
 
         if (supportFragmentManager.findFragmentByTag(LOGIN_TAG) == null) {
             supportFragmentManager.beginTransaction()

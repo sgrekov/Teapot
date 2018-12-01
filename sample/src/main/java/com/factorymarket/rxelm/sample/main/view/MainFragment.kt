@@ -7,65 +7,38 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.factorymarket.rxelm.log.LogType
-import com.factorymarket.rxelm.log.RxElmLogger
-import com.factorymarket.rxelm.program.ProgramBuilder
+import butterknife.BindView
+import com.factorymarket.rxelm.sample.BaseFragment
 import com.factorymarket.rxelm.sample.R
-import com.factorymarket.rxelm.sample.SampleApp
+import com.factorymarket.rxelm.sample.main.di.MainModule
 import com.factorymarket.rxelm.sample.main.presenter.MainPresenter
-import io.reactivex.android.schedulers.AndroidSchedulers
 import org.eclipse.egit.github.core.Repository
-import timber.log.Timber
+import javax.inject.Inject
 
-class MainFragment : Fragment(), IMainView {
+class MainFragment : BaseFragment(), IMainView {
 
-    private lateinit var presenter: MainPresenter
-    private lateinit var reposList: RecyclerView
-    private lateinit var progressBar: ProgressBar
-    private lateinit var errorText: TextView
+    @Inject lateinit var presenter: MainPresenter
+    @BindView(R.id.repos_list) lateinit var reposList: RecyclerView
+    @BindView(R.id.repos_progress) lateinit var progressBar: ProgressBar
+    @BindView(R.id.error_text) lateinit var errorText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        presenter = MainPresenter(
-            this,
-            ProgramBuilder()
-                .outputScheduler(AndroidSchedulers.mainThread())
-                .logger(object : RxElmLogger {
-
-                    override fun logType(): LogType {
-                        return LogType.Updates
-                    }
-
-                    override fun error(t: Throwable) {
-                        Timber.e(t)
-                    }
-
-                    override fun log(stateName: String, message: String) {
-                        Timber.tag(stateName).d(message)
-                    }
-                }),
-            (activity?.application as SampleApp).service
-        )
+        getActivityComponent()
+            .plusMainComponent(MainModule(this))
+            .inject(this)
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        val view = inflater.inflate(R.layout.main_layout, container, false)
-        reposList = view.findViewById(R.id.repos_list)
-        reposList.layoutManager = LinearLayoutManager(activity)
-        progressBar = view.findViewById(R.id.repos_progress)
-        errorText = view.findViewById(R.id.error_text)
-        return view
-    }
+
+    override fun getLayoutRes(): Int = R.layout.main_layout
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        reposList.layoutManager = LinearLayoutManager(activity)
+
         presenter.init(null)
     }
 

@@ -10,16 +10,18 @@ import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.program.Program
 import com.factorymarket.rxelm.program.ProgramBuilder
 import com.factorymarket.rxelm.sample.data.GitHubService
+import com.factorymarket.rxelm.sample.data.IApiService
 import com.factorymarket.rxelm.sample.main.model.LoadReposCmd
 import com.factorymarket.rxelm.sample.main.model.MainState
 import com.factorymarket.rxelm.sample.main.model.ReposLoadedMsg
 import com.factorymarket.rxelm.sample.main.view.IMainView
 import io.reactivex.Single
+import javax.inject.Inject
 
-class MainPresenter(
+class MainPresenter @Inject constructor(
     val view: IMainView,
     programBuilder: ProgramBuilder,
-    val service: GitHubService
+    private val service: IApiService
 ) : RenderableComponent<MainState> {
 
     private val program : Program<MainState> = programBuilder.build(this)

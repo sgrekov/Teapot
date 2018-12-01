@@ -2,71 +2,44 @@ package com.factorymarket.rxelm.sample.login.view
 
 import android.content.Context
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.fragment.app.Fragment
-import com.factorymarket.rxelm.program.ProgramBuilder
-import com.factorymarket.rxelm.sample.navigation.AndroidNavigator
+import butterknife.BindView
+import com.factorymarket.rxelm.sample.BaseFragment
 import com.factorymarket.rxelm.sample.R
-import com.factorymarket.rxelm.sample.SampleApp
-import com.factorymarket.rxelm.sample.data.AppPrefs
+import com.factorymarket.rxelm.sample.login.di.LoginModule
 import com.factorymarket.rxelm.sample.login.presenter.LoginPresenter
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.jakewharton.rxbinding2.widget.RxTextView
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
+import javax.inject.Inject
 
-class LoginFragment : Fragment(), ILoginView {
+class LoginFragment : BaseFragment(), ILoginView {
 
-    private var viewDisposables: CompositeDisposable = CompositeDisposable()
+    @Inject lateinit var presenter: LoginPresenter
 
-    lateinit var presenter: LoginPresenter
-    lateinit var loginInput: TextInputLayout
-    lateinit var loginText: TextInputEditText
-    lateinit var passwordInput: TextInputLayout
-    lateinit var passwordText: TextInputEditText
-    lateinit var loginBtn: Button
-    lateinit var errorTxt: TextView
-    lateinit var loginProgress: ProgressBar
-    lateinit var saveCredentialsCb: CheckBox
+    @BindView(R.id.login_til) lateinit var loginInput: TextInputLayout
+    @BindView(R.id.login) lateinit var loginText: TextInputEditText
+    @BindView(R.id.password_til) lateinit var passwordInput: TextInputLayout
+    @BindView(R.id.password) lateinit var passwordText: TextInputEditText
+    @BindView(R.id.login_btn) lateinit var loginBtn: Button
+    @BindView(R.id.error) lateinit var errorTxt: TextView
+    @BindView(R.id.login_progress) lateinit var loginProgress: ProgressBar
+    @BindView(R.id.save_credentials_cb) lateinit var saveCredentialsCb: CheckBox
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val ctx = context ?: return
 
-        presenter = LoginPresenter(
-            this,
-            ProgramBuilder()
-                .outputScheduler(AndroidSchedulers.mainThread()),
-            AppPrefs(ctx.getSharedPreferences("prefs", Context.MODE_PRIVATE)),
-            (activity?.application as SampleApp).service,
-            AndroidNavigator(activity!!)
-        )
-        presenter.init()
+        getActivityComponent()
+            .plusLoginComponent(LoginModule(this))
+            .inject(this)
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        val view = inflater.inflate(R.layout.fragment_login, container, false)
-        loginInput = view.findViewById(R.id.login_til) as TextInputLayout
-        loginText = view.findViewById(R.id.login) as TextInputEditText
-        passwordInput = view.findViewById(R.id.password_til) as TextInputLayout
-        passwordText = view.findViewById(R.id.password) as TextInputEditText
-        loginBtn = view.findViewById(R.id.login_btn) as Button
-        errorTxt = view.findViewById(R.id.error) as TextView
-        loginProgress = view.findViewById(R.id.login_progress) as ProgressBar
-        saveCredentialsCb = view.findViewById(R.id.save_credentials_cb) as CheckBox
-        return view
-    }
+    override fun getLayoutRes(): Int = R.layout.fragment_login
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -78,15 +51,7 @@ class LoginFragment : Fragment(), ILoginView {
             presenter.onSaveCredentialsCheck(isChecked)
         }
 
-        presenter.render()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        if (!viewDisposables.isDisposed) {
-            viewDisposables.dispose()
-            viewDisposables = CompositeDisposable()
-        }
+        presenter.init()
     }
 
     override fun onDestroy() {
