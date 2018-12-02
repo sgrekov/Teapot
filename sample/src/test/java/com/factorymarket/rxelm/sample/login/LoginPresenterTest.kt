@@ -1,7 +1,6 @@
 package com.factorymarket.rxelm.sample.login
 
 import com.factorymarket.rxelm.msg.Init
-import com.factorymarket.rxelm.program.Program
 import com.factorymarket.rxelm.program.ProgramBuilder
 import com.factorymarket.rxelm.sample.data.IApiService
 import com.factorymarket.rxelm.sample.data.IAppPrefs
@@ -12,7 +11,7 @@ import com.factorymarket.rxelm.sample.login.model.LoginResponseMsg
 import com.factorymarket.rxelm.sample.login.model.LoginState
 import com.factorymarket.rxelm.sample.login.model.SaveUserCredentialsCmd
 import com.factorymarket.rxelm.sample.login.model.UserCredentialsLoadedMsg
-import com.factorymarket.rxelm.sample.login.presenter.LoginPresenter
+import com.factorymarket.rxelm.sample.login.presenter.LoginViewModel
 import com.factorymarket.rxelm.sample.login.view.ILoginView
 import com.factorymarket.rxelm.sample.navigation.Navigator
 import com.factorymarket.rxelm.test.RxElmSpec
@@ -23,7 +22,7 @@ import org.mockito.Mockito.mock
 
 class LoginPresenterTest {
 
-    lateinit var presenter: LoginPresenter
+    lateinit var presenter: LoginViewModel
     lateinit var view: ILoginView
     lateinit var loginService: IApiService
     lateinit var prefs: IAppPrefs
@@ -36,7 +35,7 @@ class LoginPresenterTest {
         loginService = mock(IApiService::class.java)
         prefs = mock(IAppPrefs::class.java)
         programBuilder = ProgramBuilder().outputScheduler(Schedulers.trampoline())
-        presenter = LoginPresenter(view, programBuilder, prefs, loginService, mock(Navigator::class.java))
+        presenter = LoginViewModel(programBuilder, prefs, loginService, mock(Navigator::class.java))
         spec = RxElmSpec(presenter).withState(LoginState())
     }
 

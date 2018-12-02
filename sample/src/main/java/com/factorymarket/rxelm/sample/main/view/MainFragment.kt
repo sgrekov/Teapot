@@ -7,56 +7,67 @@ import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import butterknife.BindView
 import com.factorymarket.rxelm.sample.BaseFragment
 import com.factorymarket.rxelm.sample.R
-import com.factorymarket.rxelm.sample.main.di.MainModule
-import com.factorymarket.rxelm.sample.main.presenter.MainPresenter
+import com.factorymarket.rxelm.sample.main.presenter.MainViewModel
 import org.eclipse.egit.github.core.Repository
 import javax.inject.Inject
 
 class MainFragment : BaseFragment(), IMainView {
 
-    @Inject lateinit var presenter: MainPresenter
+    @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
+    private lateinit var model: MainViewModel
+
     @BindView(R.id.repos_list) lateinit var reposList: RecyclerView
     @BindView(R.id.repos_progress) lateinit var progressBar: ProgressBar
     @BindView(R.id.error_text) lateinit var errorText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         getActivityComponent()
-            .plusMainComponent(MainModule(this))
+            .plusMainComponent()
             .inject(this)
     }
-
 
     override fun getLayoutRes(): Int = R.layout.main_layout
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         reposList.layoutManager = LinearLayoutManager(activity)
 
-        presenter.init(null)
-    }
+        model = ViewModelProviders.of(this, viewModelFactory).get(MainViewModel::class.java)
 
-    override fun onDestroy() {
-        super.onDestroy()
-        presenter.destroy()
+        model.stateLiveData.observe(this, Observer { state ->
+            state.apply {
+                setTitle(state.userName + "'s starred repos")
+
+                showProgress(isLoading)
+                setRepos(reposList)
+                if (!isLoading && reposList.isEmpty()) {
+                    setErrorText("User has no starred repos")
+                    showErrorText()
+                }
+            }
+        })
+
+        if (savedInstanceState == null){
+            model.init(null)
+        }
     }
 
     override fun setTitle(title: String) {
         (activity as AppCompatActivity).supportActionBar?.title = title
     }
 
-    override fun showProgress() {
-        progressBar.visibility = View.VISIBLE
-    }
-
-    override fun hideProgress() {
-        progressBar.visibility = View.GONE
+    override fun showProgress(show: Boolean) {
+        progressBar.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     override fun setErrorText(errorText: String) {
@@ -71,7 +82,10 @@ class MainFragment : BaseFragment(), IMainView {
         this.reposList.adapter = ReposAdapter(reposList, layoutInflater)
     }
 
-    private inner class ReposAdapter(private val repos: List<Repository>, private val inflater: LayoutInflater) :
+    private inner class ReposAdapter(
+        private val repos: List<Repository>,
+        private val inflater: LayoutInflater
+    ) :
         RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {

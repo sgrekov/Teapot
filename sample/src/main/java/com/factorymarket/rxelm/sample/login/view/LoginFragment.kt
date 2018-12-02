@@ -8,11 +8,13 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProviders
 import butterknife.BindView
 import com.factorymarket.rxelm.sample.BaseFragment
 import com.factorymarket.rxelm.sample.R
-import com.factorymarket.rxelm.sample.login.di.LoginModule
-import com.factorymarket.rxelm.sample.login.presenter.LoginPresenter
+import com.factorymarket.rxelm.sample.login.presenter.LoginViewModel
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.jakewharton.rxbinding2.widget.RxTextView
@@ -20,7 +22,7 @@ import javax.inject.Inject
 
 class LoginFragment : BaseFragment(), ILoginView {
 
-    @Inject lateinit var presenter: LoginPresenter
+    @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
 
     @BindView(R.id.login_til) lateinit var loginInput: TextInputLayout
     @BindView(R.id.login) lateinit var loginText: TextInputEditText
@@ -31,11 +33,13 @@ class LoginFragment : BaseFragment(), ILoginView {
     @BindView(R.id.login_progress) lateinit var loginProgress: ProgressBar
     @BindView(R.id.save_credentials_cb) lateinit var saveCredentialsCb: CheckBox
 
+    private lateinit var model: LoginViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         getActivityComponent()
-            .plusLoginComponent(LoginModule(this))
+            .plusLoginComponent()
             .inject(this)
     }
 
@@ -43,20 +47,30 @@ class LoginFragment : BaseFragment(), ILoginView {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewDisposables.add(presenter.addLoginInput(RxTextView.textChanges(loginText)))
-        viewDisposables.add(presenter.addPasswordInput(RxTextView.textChanges(passwordText)))
-        loginBtn.setOnClickListener { presenter.loginBtnClick() }
+
+        model = ViewModelProviders.of(this, viewModelFactory).get(LoginViewModel::class.java)
+
+        viewDisposables.add(model.addLoginInput(RxTextView.textChanges(loginText)))
+        viewDisposables.add(model.addPasswordInput(RxTextView.textChanges(passwordText)))
+        loginBtn.setOnClickListener { model.loginBtnClick() }
         saveCredentialsCb.setOnCheckedChangeListener { buttonView, isChecked ->
             hideKeyboard()
-            presenter.onSaveCredentialsCheck(isChecked)
+            model.onSaveCredentialsCheck(isChecked)
         }
 
-        presenter.init()
-    }
+        model.stateLiveData.observe(this, Observer { state ->
+            state.apply {
+                setProgress(isLoading)
+                setEnableLoginBtn(btnEnabled)
+                setError(error)
+                showLoginError(loginError)
+                showPasswordError(passError)
+            }
+        })
 
-    override fun onDestroy() {
-        super.onDestroy()
-        presenter.destroy()
+        if (savedInstanceState == null){
+            model.init()
+        }
     }
 
     override fun setProgress(show: Boolean) {

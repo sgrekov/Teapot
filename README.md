@@ -77,10 +77,7 @@ class MyFragment : Fragment(), RenderableComponent {
     object Inc : Msg()
     object Dec : Msg()
 
-    override fun onCreateView(
-            inflater: LayoutInflater, container: ViewGroup?,
-            savedInstanceState: Bundle?
-        ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = inflater.inflate(R.layout.main_layout, container, false)       
 
         val program = ProgramBuilder()

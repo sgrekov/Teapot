@@ -1,6 +1,5 @@
 package com.factorymarket.rxelm.sample.di
 
-import android.app.Application
 import android.content.Context
 import com.factorymarket.rxelm.log.LogType
 import com.factorymarket.rxelm.log.RxElmLogger
@@ -10,12 +9,8 @@ import com.factorymarket.rxelm.sample.data.AppPrefs
 import com.factorymarket.rxelm.sample.data.GitHubService
 import com.factorymarket.rxelm.sample.data.IApiService
 import com.factorymarket.rxelm.sample.data.IAppPrefs
-import com.factorymarket.rxelm.sample.login.di.LoginComponent
-import com.factorymarket.rxelm.sample.login.di.LoginModule
 import com.factorymarket.rxelm.sample.main.di.ActivityComponent
 import com.factorymarket.rxelm.sample.main.di.ActivityModule
-import com.factorymarket.rxelm.sample.main.di.MainComponent
-import com.factorymarket.rxelm.sample.main.di.MainModule
 import dagger.BindsInstance
 import dagger.Component
 import dagger.Module

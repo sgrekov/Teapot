@@ -1,18 +1,16 @@
 package com.factorymarket.rxelm.sample.login.presenter
 
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.None
-import com.factorymarket.rxelm.contract.Component
 import com.factorymarket.rxelm.contract.RenderableComponent
-import com.factorymarket.rxelm.log.LogType
-import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.msg.ErrorMsg
+import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.program.Program
-import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.program.ProgramBuilder
-import com.factorymarket.rxelm.sample.navigation.Navigator
 import com.factorymarket.rxelm.sample.data.IApiService
 import com.factorymarket.rxelm.sample.data.IAppPrefs
 import com.factorymarket.rxelm.sample.inView
@@ -28,7 +26,7 @@ import com.factorymarket.rxelm.sample.login.model.PassInputMsg
 import com.factorymarket.rxelm.sample.login.model.SaveUserCredentialsCmd
 import com.factorymarket.rxelm.sample.login.model.UserCredentialsLoadedMsg
 import com.factorymarket.rxelm.sample.login.model.UserCredentialsSavedMsg
-import com.factorymarket.rxelm.sample.login.view.ILoginView
+import com.factorymarket.rxelm.sample.navigation.Navigator
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
@@ -36,15 +34,16 @@ import org.eclipse.egit.github.core.client.RequestException
 import timber.log.Timber
 import javax.inject.Inject
 
-class LoginPresenter @Inject constructor(
-    private val loginView: ILoginView,
+class LoginViewModel @Inject constructor(
     programBuilder: ProgramBuilder,
     private val appPrefs: IAppPrefs,
     private val apiService: IApiService,
     private val navigator: Navigator
-) : RenderableComponent<LoginState> {
+) : ViewModel(), RenderableComponent<LoginState> {
 
     private val program: Program<LoginState> = programBuilder.build(this)
+
+    var stateLiveData : MutableLiveData<LoginState> = MutableLiveData()
 
     fun init() {
         program.run(initialState = LoginState())
@@ -103,17 +102,7 @@ class LoginPresenter @Inject constructor(
     }
 
     override fun render(state: LoginState) {
-        state.apply {
-            loginView.setProgress(isLoading)
-            loginView.setEnableLoginBtn(btnEnabled)
-            loginView.setError(error)
-            loginView.showLoginError(loginError)
-            loginView.showPasswordError(passError)
-        }
-    }
-
-    fun render() {
-        program.render()
+        stateLiveData.value = state
     }
 
     override fun call(cmd: Cmd): Single<Msg> {
@@ -121,7 +110,7 @@ class LoginPresenter @Inject constructor(
             is GetSavedUserCmd -> appPrefs.getUserSavedCredentials()
                 .map { (login, pass) -> UserCredentialsLoadedMsg(login, pass) }
             is SaveUserCredentialsCmd -> appPrefs.saveUserSavedCredentials(cmd.login, cmd.pass)
-                .map { _ -> UserCredentialsSavedMsg() }
+                .map { UserCredentialsSavedMsg() }
             is LoginCmd -> apiService.login(cmd.login, cmd.pass)
                 .map { logged -> LoginResponseMsg(logged) }
             is GoToMainCmd -> {
@@ -169,7 +158,9 @@ class LoginPresenter @Inject constructor(
         }
     }
 
-    fun destroy() {
+    override fun onCleared() {
+        super.onCleared()
         program.stop()
     }
+
 }

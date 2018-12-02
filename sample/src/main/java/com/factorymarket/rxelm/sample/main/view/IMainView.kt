@@ -6,9 +6,7 @@ import org.eclipse.egit.github.core.Repository
 interface IMainView {
     fun setTitle(title: String)
 
-    fun showProgress()
-
-    fun hideProgress()
+    fun showProgress(show : Boolean)
 
     fun setErrorText(errorText: String)
 
