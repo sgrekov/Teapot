@@ -3,6 +3,7 @@ package com.factorymarket.rxelm.cmd
 sealed class AbstractCmd
 open class Cmd : AbstractCmd()
 open class SwitchCmd : Cmd()
+data class CancelCmd(val cancelCmd: Cmd) : Cmd()
 object None : Cmd()
 
 data class BatchCmd(val cmds: MutableSet<Cmd>) : Cmd() {

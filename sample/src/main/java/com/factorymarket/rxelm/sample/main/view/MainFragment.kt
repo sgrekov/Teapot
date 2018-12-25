@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -23,6 +24,8 @@ class MainFragment : BaseFragment(), IMainView {
     @BindView(R.id.repos_list) lateinit var reposList: RecyclerView
     @BindView(R.id.repos_progress) lateinit var progressBar: ProgressBar
     @BindView(R.id.error_text) lateinit var errorText: TextView
+    @BindView(R.id.send) lateinit var sendBtn: Button
+    @BindView(R.id.cancel) lateinit var cancelBtn: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +41,14 @@ class MainFragment : BaseFragment(), IMainView {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         reposList.layoutManager = LinearLayoutManager(activity)
+
+        sendBtn.setOnClickListener {
+            presenter.send()
+        }
+
+        cancelBtn.setOnClickListener {
+            presenter.cancel()
+        }
 
         presenter.init(null)
     }

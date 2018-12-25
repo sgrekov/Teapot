@@ -14,12 +14,12 @@ class MainActivity : AppCompatActivity() {
     lateinit var activityComponent: ActivityComponent
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.login_main)
-
         activityComponent = (application as SampleApp)
             .appComponent
             .plusActivityComponent(ActivityModule(this))
+
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.login_main)
 
         if (supportFragmentManager.findFragmentByTag(LOGIN_TAG) == null) {
             supportFragmentManager.beginTransaction()

@@ -60,6 +60,7 @@ interface AppComponent {
         fun programBuilder(): ProgramBuilder {
             return ProgramBuilder()
                 .outputScheduler(AndroidSchedulers.mainThread())
+                .handleCmdErrors(true)
                 .logger(object : RxElmLogger {
 
                     override fun logType(): LogType {
