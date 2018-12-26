@@ -1,9 +1,12 @@
 package com.factorymarket.rxelm.cmd
 
+import kotlin.reflect.KClass
+
 sealed class AbstractCmd
 open class Cmd : AbstractCmd()
 open class SwitchCmd : Cmd()
 data class CancelCmd(val cancelCmd: Cmd) : Cmd()
+data class CancelByClassCmd<T : Cmd>(val cmdClass: KClass<T>) : Cmd()
 object None : Cmd()
 
 data class BatchCmd(val cmds: MutableSet<Cmd>) : Cmd() {

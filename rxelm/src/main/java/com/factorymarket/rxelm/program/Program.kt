@@ -1,6 +1,7 @@
 package com.factorymarket.rxelm.program
 
 import com.factorymarket.rxelm.cmd.BatchCmd
+import com.factorymarket.rxelm.cmd.CancelByClassCmd
 import com.factorymarket.rxelm.cmd.CancelCmd
 import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.None
@@ -18,7 +19,6 @@ import com.factorymarket.rxelm.sub.RxElmSubscriptions
 import com.jakewharton.rxrelay2.BehaviorRelay
 import com.jakewharton.rxrelay2.Relay
 import io.reactivex.Observable
-import io.reactivex.Observer
 import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
@@ -26,6 +26,7 @@ import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import java.util.ArrayDeque
 import java.util.TreeMap
+import kotlin.reflect.KClass
 
 /**
  * How to use these class:
@@ -71,8 +72,7 @@ class Program<S : State> internal constructor(
 ) {
 
     private val messageRelay: BehaviorRelay<Msg> = BehaviorRelay.create()
-    private val commandsDisposablesMap: MutableMap<Int, Disposable> = TreeMap()
-    private val inactiveDisposables: MutableList<Disposable> = mutableListOf()
+    private val commandsDisposablesMap: MutableMap<Int, MutableMap<Int, Disposable>> = TreeMap()
     private val switchRelayHolder: HashMap<String, Relay<SwitchCmd>> = HashMap()
 
     /** Here messages are kept until they can be passed to messageRelay */
@@ -151,12 +151,22 @@ class Program<S : State> internal constructor(
                 relay.accept(cmd)
             }
             is CancelCmd -> {
-                val disposable = commandsDisposablesMap[cmd.cancelCmd.hashCode()]
-                if (disposable != null && !disposable.isDisposed) {
+                val commandDisposablesMap = commandsDisposablesMap[cmd.cancelCmd::class.hashCode()] ?: return
+
+                val commandDisposables = commandDisposablesMap[cmd.cancelCmd.hashCode()]
+                if (commandDisposables != null && !commandDisposables.isDisposed) {
                     logger?.takeIf { logger.logType().needToShowCommands() }?.let {
                         logger.log(this.state.javaClass.simpleName, "elm cancel cmd:${cmd.cancelCmd}")
                     }
-                    disposable.dispose()
+                    commandDisposables.dispose()
+                }
+            }
+            is CancelByClassCmd<*> -> {
+                val commandDisposablesMap = commandsDisposablesMap[cmd.cmdClass.hashCode()] ?: return
+                commandDisposablesMap.values.forEach { disposable ->
+                    if (!disposable.isDisposed) {
+                        disposable.dispose()
+                    }
                 }
             }
             else -> handleCmd(cmd)
@@ -170,11 +180,18 @@ class Program<S : State> internal constructor(
 
         val cmdObservable = cmdCall(cmd).subscribeOn(Schedulers.io())
         val disposable = handleResponse(cmdObservable)
-        val oldDisposable = commandsDisposablesMap[cmd.hashCode()]
-        if (oldDisposable != null && !oldDisposable.isDisposed) {
-            disposables.add(oldDisposable)
+        val cmdDisposablesMap = commandsDisposablesMap[cmd::class.hashCode()]
+        cmdDisposablesMap?.let {
+            val oldDisposable = cmdDisposablesMap[cmd.hashCode()]
+            if (oldDisposable != null && !oldDisposable.isDisposed) {
+                disposables.add(oldDisposable)
+            }
+            cmdDisposablesMap[cmd.hashCode()] = disposable
+        } ?: run {
+            val disposablesMap = TreeMap<Int, Disposable>()
+            disposablesMap[cmd.hashCode()] = disposable
+            commandsDisposablesMap[cmd::class.hashCode()] = disposablesMap
         }
-        commandsDisposablesMap[cmd.hashCode()] = disposable
     }
 
     private fun getSwitchRelay(cmd: SwitchCmd): Relay<SwitchCmd> {
@@ -215,50 +232,23 @@ class Program<S : State> internal constructor(
         return updateResult
     }
 
-    class LocalObserver : Observer<Msg> {
-        override fun onComplete() {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun onSubscribe(d: Disposable) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun onNext(t: Msg) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-        override fun onError(e: Throwable) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-
-    }
-
     private fun handleResponse(observable: Observable<Msg>): Disposable {
         return observable
             .observeOn(outputScheduler)
-            .subscribe({ msg ->
+            .subscribe { msg ->
                 if (msg !is Idle) {
                     messageQueue.addLast(msg)
                 }
 
                 pickNextMessageFromQueue()
-            }, {
-                messageQueue.addLast(ErrorMsg(it, None))
-
-                pickNextMessageFromQueue()
-            })
+            }
     }
 
     private fun cmdCall(cmd: Cmd): Observable<Msg> {
         return if (handleCmdErrors) {
             component.call(cmd)
                 .onErrorResumeNext { err ->
-                    logger?.log(
-                        this.state.javaClass.simpleName,
-                        "error!!!!!!!!!!"
-                    )
-                    logger?.error(err)
+                    logger?.takeIf { it.logType().needToShowCommands() }?.error(this.state.javaClass.simpleName, err)
                     Single.just(ErrorMsg(err, cmd))
                 }
                 .toObservable()
@@ -314,14 +304,11 @@ class Program<S : State> internal constructor(
         if (!disposables.isDisposed) {
             disposables.dispose()
         }
-        commandsDisposablesMap.forEach {
-            if (!it.value.isDisposed) {
-                it.value.dispose()
-            }
-        }
-        inactiveDisposables.forEach {
-            if (!it.isDisposed) {
-                it.dispose()
+        commandsDisposablesMap.values.forEach {
+            it.values.forEach { disposable ->
+                if (!disposable.isDisposed) {
+                    disposable.dispose()
+                }
             }
         }
         rxElmSubscriptions?.dispose()

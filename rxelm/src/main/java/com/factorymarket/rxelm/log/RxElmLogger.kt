@@ -28,6 +28,6 @@ interface RxElmLogger {
      */
     fun log(stateName: String, message: String)
 
-    fun error(t: Throwable)
+    fun error(stateName: String, t: Throwable)
 
 }
