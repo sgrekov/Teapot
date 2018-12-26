@@ -64,11 +64,11 @@ interface AppComponent {
                 .logger(object : RxElmLogger {
 
                     override fun logType(): LogType {
-                        return LogType.UpdatesAndCommands
+                        return LogType.All
                     }
 
-                    override fun error(t: Throwable) {
-                        Timber.e(t)
+                    override fun error(stateName: String, t: Throwable) {
+                        Timber.tag(stateName).e(t)
                     }
 
                     override fun log(stateName: String, message: String) {

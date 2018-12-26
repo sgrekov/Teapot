@@ -86,7 +86,6 @@ class LoginPresenter @Inject constructor(
                 state.copy(isLoading = true, error = null) to LoginCmd(state.login, state.pass)
             }
             is ErrorMsg -> {
-                Timber.e(msg.err)
                 return when (msg.cmd) {
                     is GetSavedUserCmd -> state.copy(isLoading = false) to None
                     is LoginCmd -> {

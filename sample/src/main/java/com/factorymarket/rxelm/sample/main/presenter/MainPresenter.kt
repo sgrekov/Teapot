@@ -1,6 +1,7 @@
 package com.factorymarket.rxelm.sample.main.presenter
 
 
+import com.factorymarket.rxelm.cmd.CancelByClassCmd
 import com.factorymarket.rxelm.cmd.CancelCmd
 import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.None
@@ -15,9 +16,12 @@ import com.factorymarket.rxelm.sample.data.IApiService
 import com.factorymarket.rxelm.sample.main.model.CancelMsg
 import com.factorymarket.rxelm.sample.main.model.LoadReposCmd
 import com.factorymarket.rxelm.sample.main.model.MainState
+import com.factorymarket.rxelm.sample.main.model.RefreshMsg
 import com.factorymarket.rxelm.sample.main.model.ReposLoadedMsg
 import com.factorymarket.rxelm.sample.main.view.IMainView
 import io.reactivex.Single
+import io.reactivex.exceptions.UndeliverableException
+import io.reactivex.plugins.RxJavaPlugins
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -37,7 +41,8 @@ class MainPresenter @Inject constructor(
         return when (msg) {
             is Init -> state.copy(isLoading = true) to LoadReposCmd(state.userName)
             is ReposLoadedMsg -> state.copy(isLoading = false, reposList = msg.reposList) to None
-            is CancelMsg -> state to CancelCmd(LoadReposCmd(state.userName))
+            is CancelMsg -> state.copy(isLoading = false) to CancelByClassCmd(cmdClass = LoadReposCmd::class)
+            is RefreshMsg -> state.copy(isLoading = true, reposList = listOf()) to LoadReposCmd(state.userName)
             else -> state to None
         }
     }
@@ -47,6 +52,7 @@ class MainPresenter @Inject constructor(
             view.setTitle(state.userName + "'s starred repos")
 
             if (isLoading) {
+                view.showErrorText(false)
                 if (reposList.isEmpty()) {
                     view.showProgress()
                 }
@@ -54,7 +60,7 @@ class MainPresenter @Inject constructor(
                 view.hideProgress()
                 if (reposList.isEmpty()) {
                     view.setErrorText("User has no starred repos")
-                    view.showErrorText()
+                    view.showErrorText(true)
                 }
             }
             view.setRepos(reposList)
@@ -63,10 +69,8 @@ class MainPresenter @Inject constructor(
 
     override fun call(cmd: Cmd): Single<Msg> {
         return when (cmd) {
-            is LoadReposCmd -> service.getStarredRepos(cmd.userName).delay(
-                10,
-                TimeUnit.SECONDS
-            ).map { repos -> ReposLoadedMsg(repos) }
+            is LoadReposCmd -> service.getStarredRepos(cmd.userName).delay(5,TimeUnit.SECONDS)
+                .map { repos -> ReposLoadedMsg(repos) }
             else -> Single.just(Idle)
         }
     }
@@ -75,8 +79,8 @@ class MainPresenter @Inject constructor(
         program.stop()
     }
 
-    fun send() {
-//        program.accept(SendMsg)
+    fun refresh() {
+        program.accept(RefreshMsg)
     }
 
     fun cancel() {

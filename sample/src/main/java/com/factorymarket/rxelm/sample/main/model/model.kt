@@ -16,3 +16,4 @@ data class LoadReposCmd(val userName: String) : Cmd()
 
 data class ReposLoadedMsg(val reposList: List<Repository>) : Msg()
 object CancelMsg: Msg()
+object RefreshMsg: Msg()

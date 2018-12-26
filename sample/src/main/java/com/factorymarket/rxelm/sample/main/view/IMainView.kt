@@ -12,7 +12,7 @@ interface IMainView {
 
     fun setErrorText(errorText: String)
 
-    fun showErrorText()
+    fun showErrorText(show : Boolean)
 
     fun setRepos(reposList: List<Repository>)
 }

@@ -10,6 +10,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
+        tools:visibility="visible"
+        tools:text="empty"
         android:text="" />
 
     <ProgressBar
@@ -18,11 +20,12 @@
         android:layout_width="wrap_content"
         android:layout_height="30dp"
         android:layout_gravity="center"
+        tools:visibility="visible"
         android:visibility="gone" />
 
     <Button
-        android:id="@+id/send"
-        android:text="Send"
+        android:id="@+id/refresh"
+        android:text="Refresh"
         android:layout_gravity="top|left"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />

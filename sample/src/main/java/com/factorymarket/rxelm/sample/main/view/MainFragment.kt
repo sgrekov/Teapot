@@ -24,7 +24,7 @@ class MainFragment : BaseFragment(), IMainView {
     @BindView(R.id.repos_list) lateinit var reposList: RecyclerView
     @BindView(R.id.repos_progress) lateinit var progressBar: ProgressBar
     @BindView(R.id.error_text) lateinit var errorText: TextView
-    @BindView(R.id.send) lateinit var sendBtn: Button
+    @BindView(R.id.refresh) lateinit var refreshBtn: Button
     @BindView(R.id.cancel) lateinit var cancelBtn: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,8 +42,8 @@ class MainFragment : BaseFragment(), IMainView {
         super.onViewCreated(view, savedInstanceState)
         reposList.layoutManager = LinearLayoutManager(activity)
 
-        sendBtn.setOnClickListener {
-            presenter.send()
+        refreshBtn.setOnClickListener {
+            presenter.refresh()
         }
 
         cancelBtn.setOnClickListener {
@@ -74,8 +74,8 @@ class MainFragment : BaseFragment(), IMainView {
         this.errorText.text = errorText
     }
 
-    override fun showErrorText() {
-        errorText.visibility = View.VISIBLE
+    override fun showErrorText(show : Boolean) {
+        errorText.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     override fun setRepos(reposList: List<Repository>) {
