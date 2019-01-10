@@ -54,8 +54,8 @@ class RxElmSpec<S : State> constructor(val component: Component<S>) {
     }
 
     fun thenCmdBatch(vararg cmds: Cmd): RxElmSpec<S> {
-        Assert.assertEquals((this.cmd as BatchCmd).cmds.size, cmds.size)
-        Assert.assertEquals(this.cmd, BatchCmd(cmds = cmds.toMutableSet()))
+        Assert.assertEquals(cmds.size, (this.cmd as BatchCmd).cmds.size)
+        Assert.assertEquals(BatchCmd(cmds = cmds.toMutableSet()), this.cmd)
         return this
     }
 
