@@ -151,7 +151,7 @@ class Program<S : State> internal constructor(
                 relay.accept(cmd)
             }
             is CancelCmd -> {
-                val commandDisposablesMap = commandsDisposablesMap[cmd.cancelCmd::class.hashCode()] ?: return
+                val commandDisposablesMap = commandsDisposablesMap[cmd.cancelCmd.hashCode()] ?: return
 
                 val commandDisposables = commandDisposablesMap[cmd.cancelCmd.hashCode()]
                 if (commandDisposables != null && !commandDisposables.isDisposed) {
