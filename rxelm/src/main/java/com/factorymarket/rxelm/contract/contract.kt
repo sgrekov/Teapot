@@ -34,3 +34,12 @@ interface RenderableComponent<S : State> : Component<S> {
     fun render(state: S)
 
 }
+
+interface Renderable<S : State> {
+
+    /** Just render current state, no changes invoked */
+    fun render(state: S)
+
+    fun isRendering(): Boolean = false
+
+}

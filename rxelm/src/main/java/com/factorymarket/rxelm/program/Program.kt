@@ -7,6 +7,7 @@ import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.None
 import com.factorymarket.rxelm.cmd.SwitchCmd
 import com.factorymarket.rxelm.contract.Component
+import com.factorymarket.rxelm.contract.Renderable
 import com.factorymarket.rxelm.contract.RenderableComponent
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.contract.State
@@ -82,6 +83,7 @@ class Program<S : State> internal constructor(
     private lateinit var state: S
 
     private var lock: Boolean = false
+    private var isRendering: Boolean = false
     private var rxElmSubscriptions: RxElmSubscriptions<S>? = null
     private var disposables: CompositeDisposable = CompositeDisposable()
 
@@ -115,8 +117,14 @@ class Program<S : State> internal constructor(
 
                 val (newState, command) = update(msg, component, logger)
 
-                if (component is RenderableComponent && newState !== this.state) {
-                    component.render(newState)
+                if (newState !== this.state) {
+                    isRendering = true
+                    if (component is Renderable<*>) {
+                        (component as Renderable<S>).render(newState)
+                    } else if (component is RenderableComponent) {
+                        component.render(newState)
+                    }
+                    isRendering = false
                 }
 
                 this.state = newState
@@ -204,6 +212,8 @@ class Program<S : State> internal constructor(
         }
         return relay!!
     }
+
+    fun isRendering() : Boolean = isRendering
 
     private fun subscribeSwitchRelay(relay: BehaviorRelay<SwitchCmd>) {
         val switchDisposable = handleResponse(relay.switchMap { cmd ->
