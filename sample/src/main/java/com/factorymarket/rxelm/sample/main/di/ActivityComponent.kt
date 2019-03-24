@@ -5,6 +5,8 @@ import com.factorymarket.rxelm.sample.login.di.LoginComponent
 import com.factorymarket.rxelm.sample.login.di.LoginModule
 import com.factorymarket.rxelm.sample.navigation.AndroidNavigator
 import com.factorymarket.rxelm.sample.navigation.Navigator
+import com.factorymarket.rxelm.sample.repo.di.RepoComponent
+import com.factorymarket.rxelm.sample.repo.di.RepoModule
 import dagger.Module
 import dagger.Provides
 import dagger.Subcomponent
@@ -14,6 +16,7 @@ interface ActivityComponent {
 
     fun plusLoginComponent(module: LoginModule): LoginComponent
     fun plusMainComponent(module: MainModule): MainComponent
+    fun plusRepoComponent(module: RepoModule): RepoComponent
 
 }
 

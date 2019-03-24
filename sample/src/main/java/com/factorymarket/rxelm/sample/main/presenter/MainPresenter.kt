@@ -2,7 +2,6 @@ package com.factorymarket.rxelm.sample.main.presenter
 
 
 import com.factorymarket.rxelm.cmd.CancelByClassCmd
-import com.factorymarket.rxelm.cmd.CancelCmd
 import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.None
 import com.factorymarket.rxelm.contract.RenderableComponent
@@ -11,7 +10,6 @@ import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.program.Program
 import com.factorymarket.rxelm.program.ProgramBuilder
-import com.factorymarket.rxelm.sample.data.GitHubService
 import com.factorymarket.rxelm.sample.data.IApiService
 import com.factorymarket.rxelm.sample.main.model.CancelMsg
 import com.factorymarket.rxelm.sample.main.model.LoadReposCmd
@@ -19,16 +17,17 @@ import com.factorymarket.rxelm.sample.main.model.MainState
 import com.factorymarket.rxelm.sample.main.model.RefreshMsg
 import com.factorymarket.rxelm.sample.main.model.ReposLoadedMsg
 import com.factorymarket.rxelm.sample.main.view.IMainView
+import com.factorymarket.rxelm.sample.navigation.Navigator
 import io.reactivex.Single
-import io.reactivex.exceptions.UndeliverableException
-import io.reactivex.plugins.RxJavaPlugins
+import org.eclipse.egit.github.core.Repository
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 class MainPresenter @Inject constructor(
     val view: IMainView,
     programBuilder: ProgramBuilder,
-    private val service: IApiService
+    private val service: IApiService,
+    private val navigator: Navigator
 ) : RenderableComponent<MainState> {
 
     private val program: Program<MainState> = programBuilder.build(this)
@@ -67,9 +66,13 @@ class MainPresenter @Inject constructor(
         }
     }
 
+    fun render() {
+        program.render()
+    }
+
     override fun call(cmd: Cmd): Single<Msg> {
         return when (cmd) {
-            is LoadReposCmd -> service.getStarredRepos(cmd.userName).delay(5,TimeUnit.SECONDS)
+            is LoadReposCmd -> service.getStarredRepos(cmd.userName).delay(2,TimeUnit.SECONDS)
                 .map { repos -> ReposLoadedMsg(repos) }
             else -> Single.just(Idle)
         }
@@ -85,6 +88,10 @@ class MainPresenter @Inject constructor(
 
     fun cancel() {
         program.accept(CancelMsg)
+    }
+
+    fun onRepoItemClick(repository: Repository) {
+        navigator.goToRepo(repository)
     }
 
 }

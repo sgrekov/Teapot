@@ -33,6 +33,8 @@ class MainFragment : BaseFragment(), IMainView {
         getActivityComponent()
             .plusMainComponent(MainModule(this))
             .inject(this)
+
+        presenter.init(null)
     }
 
 
@@ -50,7 +52,7 @@ class MainFragment : BaseFragment(), IMainView {
             presenter.cancel()
         }
 
-        presenter.init(null)
+        presenter.render()
     }
 
     override fun onDestroy() {
@@ -83,14 +85,17 @@ class MainFragment : BaseFragment(), IMainView {
     }
 
     private inner class ReposAdapter(private val repos: List<Repository>, private val inflater: LayoutInflater) :
-        RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        RecyclerView.Adapter<ReposAdapter.RepoViewHolder>() {
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RepoViewHolder {
             return RepoViewHolder(inflater.inflate(R.layout.repos_list_item_layout, parent, false))
         }
 
-        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-            (holder as RepoViewHolder).bind(repos[position])
+        override fun onBindViewHolder(holder: RepoViewHolder, position: Int) {
+            holder.bind(repos[position])
+            holder.itemView.setOnClickListener {
+                presenter.onRepoItemClick(repos[position])
+            }
         }
 
         override fun getItemCount(): Int {

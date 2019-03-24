@@ -3,6 +3,7 @@ package com.factorymarket.rxelm.sample.main.view
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.factorymarket.rxelm.sample.LOGIN_TAG
+import com.factorymarket.rxelm.sample.MAIN_TAG
 import com.factorymarket.rxelm.sample.R
 import com.factorymarket.rxelm.sample.SampleApp
 import com.factorymarket.rxelm.sample.login.view.LoginFragment
@@ -20,6 +21,10 @@ class MainActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.login_main)
+
+        if (supportFragmentManager.findFragmentByTag(MAIN_TAG) != null) {
+            return
+        }
 
         if (supportFragmentManager.findFragmentByTag(LOGIN_TAG) == null) {
             supportFragmentManager.beginTransaction()
