@@ -210,7 +210,7 @@ class Program<S : State> internal constructor(
             switchRelayHolder[cmdName] = relay
             subscribeSwitchRelay(relay)
         }
-        return relay!!
+        return relay
     }
 
     fun isRendering() : Boolean = isRendering

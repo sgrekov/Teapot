@@ -1,1 +1,1 @@
-include ':sample', ':rxelm', ':rxelmtest'
+include ':sample', ':rxelm', ':rxelmtest', ':rxelmcomponents'
