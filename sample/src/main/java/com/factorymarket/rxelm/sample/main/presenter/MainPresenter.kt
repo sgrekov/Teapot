@@ -3,8 +3,8 @@ package com.factorymarket.rxelm.sample.main.presenter
 
 import com.factorymarket.rxelm.cmd.CancelByClassCmd
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.cmd.None
 import com.factorymarket.rxelm.contract.RenderableComponent
+import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.msg.Msg
@@ -36,13 +36,13 @@ class MainPresenter @Inject constructor(
         program.run(initialState ?: MainState(userName = service.getUserName()))
     }
 
-    override fun update(msg: Msg, state: MainState): Pair<MainState, Cmd> {
+    override fun update(msg: Msg, state: MainState): Update<MainState> {
         return when (msg) {
-            is Init -> state.copy(isLoading = true) to LoadReposCmd(state.userName)
-            is ReposLoadedMsg -> state.copy(isLoading = false, reposList = msg.reposList) to None
-            is CancelMsg -> state.copy(isLoading = false) to CancelByClassCmd(cmdClass = LoadReposCmd::class)
-            is RefreshMsg -> state.copy(isLoading = true, reposList = listOf()) to LoadReposCmd(state.userName)
-            else -> state to None
+            is Init -> Update.update(state.copy(isLoading = true), LoadReposCmd(state.userName))
+            is ReposLoadedMsg -> Update.state(state.copy(isLoading = false, reposList = msg.reposList))
+            is CancelMsg -> Update.update(state.copy(isLoading = false), CancelByClassCmd(cmdClass = LoadReposCmd::class))
+            is RefreshMsg -> Update.update(state.copy(isLoading = true, reposList = listOf()), LoadReposCmd(state.userName))
+            else -> Update.idle()
         }
     }
 

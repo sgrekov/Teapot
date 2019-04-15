@@ -1,11 +1,8 @@
 package com.factorymarket.rxelm.sample.login.presenter
 
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.cmd.None
-import com.factorymarket.rxelm.contract.Component
 import com.factorymarket.rxelm.contract.RenderableComponent
-import com.factorymarket.rxelm.log.LogType
-import com.factorymarket.rxelm.log.RxElmLogger
+import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.msg.Msg
@@ -33,7 +30,6 @@ import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
 import org.eclipse.egit.github.core.client.RequestException
-import timber.log.Timber
 import javax.inject.Inject
 
 class LoginPresenter @Inject constructor(
@@ -50,54 +46,55 @@ class LoginPresenter @Inject constructor(
         program.run(initialState = LoginState())
     }
 
-    override fun update(msg: Msg, state: LoginState): Pair<LoginState, Cmd> {
+    override fun update(msg: Msg, state: LoginState): Update<LoginState> {
         return when (msg) {
-            is Init -> state.copy(isLoading = true) to GetSavedUserCmd
+            is Init -> Update.update(state.copy(isLoading = true), GetSavedUserCmd)
             is UserCredentialsLoadedMsg ->
-                state.copy(login = msg.login, pass = msg.pass) to LoginCmd(msg.login, msg.pass)
-            is LoginResponseMsg -> {
+                Update.update(state.copy(login = msg.login, pass = msg.pass), LoginCmd(msg.login, msg.pass))
+            is LoginResponseMsg -> Update.effect(
                 if (state.saveUser) {
-                    state to SaveUserCredentialsCmd(state.login, state.pass)
+                    SaveUserCredentialsCmd(state.login, state.pass)
                 } else {
-                    state to GoToMainCmd
+                    GoToMainCmd
                 }
-            }
-            is UserCredentialsSavedMsg -> state to GoToMainCmd
-            is IsSaveCredentialsMsg -> Pair(state.copy(saveUser = msg.checked), None)
-            is LoginInputMsg -> {
-                if (!validateLogin(msg.login))
-                    state.copy(login = msg.login, btnEnabled = false) to None
-                else
-                    state.copy(login = msg.login, loginError = null, btnEnabled = validatePass(state.pass)) to None
-            }
-            is PassInputMsg -> {
-                if (!validatePass(msg.pass))
-                    state.copy(pass = msg.pass, btnEnabled = false) to None
-                else
-                    state.copy(pass = msg.pass, btnEnabled = validateLogin(state.login)) to None
-            }
+            )
+            is UserCredentialsSavedMsg -> Update.effect(GoToMainCmd)
+            is IsSaveCredentialsMsg -> Update.state(state.copy(saveUser = msg.checked))
+            is LoginInputMsg ->
+                Update.state(
+                    if (!validateLogin(msg.login)) {
+                        state.copy(login = msg.login, btnEnabled = false)
+                    } else state.copy(login = msg.login, loginError = null, btnEnabled = validatePass(state.pass))
+                )
+            is PassInputMsg ->
+                Update.state(
+                    if (!validatePass(msg.pass)) {
+                        state.copy(pass = msg.pass, btnEnabled = false)
+                    } else state.copy(pass = msg.pass, btnEnabled = validateLogin(state.login))
+                )
             is LoginClickMsg -> {
                 if (checkLogin(state.login)) {
-                    state.copy(loginError = "Login is not valid") to None
+                    Update.state(state.copy(loginError = "Login is not valid"))
                 }
                 if (checkPass(state.pass)) {
-                    state.copy(passError = "Password is not valid") to None
+                    Update.state(state.copy(passError = "Password is not valid"))
                 }
-                state.copy(isLoading = true, error = null) to LoginCmd(state.login, state.pass)
+                Update.update(state.copy(isLoading = true, error = null), LoginCmd(state.login, state.pass))
             }
             is ErrorMsg -> {
-                return when (msg.cmd) {
-                    is GetSavedUserCmd -> state.copy(isLoading = false) to None
+                val newState = when (msg.cmd) {
+                    is GetSavedUserCmd -> state.copy(isLoading = false)
                     is LoginCmd -> {
                         if (msg.err is RequestException) {
-                            state.copy(isLoading = false, error = (msg.err as RequestException).error.message) to None
+                            state.copy(isLoading = false, error = (msg.err as RequestException).error.message)
                         }
-                        state.copy(isLoading = false, error = "Error while login") to None
+                        state.copy(isLoading = false, error = "Error while login")
                     }
-                    else -> state to None
+                    else -> state
                 }
+                return Update.state(newState)
             }
-            else -> state to None
+            else -> Update.idle()
         }
     }
 

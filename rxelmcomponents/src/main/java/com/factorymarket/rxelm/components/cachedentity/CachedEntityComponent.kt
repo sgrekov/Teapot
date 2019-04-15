@@ -3,6 +3,7 @@ package com.factorymarket.rxelm.components.cachedentity
 import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.None
 import com.factorymarket.rxelm.contract.PluginComponent
+import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.Msg
 import io.reactivex.Single
 
@@ -35,19 +36,19 @@ class CachedEntityComponent<T, FETCH_PARAMS>(
     override fun update(
         msg: Msg,
         state: CachedEntityState<T, FETCH_PARAMS>
-    ): Pair<CachedEntityState<T, FETCH_PARAMS>, Cmd> {
+    ): Update<CachedEntityState<T, FETCH_PARAMS>> {
         return when (val cachedMsg = msg as CachedEntityMsg) {
-            is StartLoadMsg<*> -> state to LoadFromCacheCmd(state.fetchParams, namespace)
-            is EntityLoadedFromCacheMsg<*> -> state.loadedFromCacheState(cachedMsg.entity as T) to LoadFromCloudCmd(
-                state.fetchParams,
-                namespace
+            is StartLoadMsg<*> -> Update.effect(LoadFromCacheCmd(state.fetchParams, namespace))
+            is EntityLoadedFromCacheMsg<*> -> Update.update(
+                state.loadedFromCacheState(cachedMsg.entity as T),
+                LoadFromCloudCmd(state.fetchParams, namespace)
             )
-            is EntityNotFoundInCacheMsg -> state.loadedFromCacheState(null) to LoadFromCloudCmd(
-                state.fetchParams,
-                namespace
+            is EntityNotFoundInCacheMsg -> Update.update(
+                state.loadedFromCacheState(null),
+                LoadFromCloudCmd(state.fetchParams, namespace)
             )
-            is EntityLoadedFromCloudMsg<*> -> state.syncedWithCloudState(entity = cachedMsg.entity as T) to None
-            is ErrorWhileLoadingFromCloudMsg -> state.errorState(cachedMsg.throwable) to None
+            is EntityLoadedFromCloudMsg<*> -> Update.state(state.syncedWithCloudState(entity = cachedMsg.entity as T))
+            is ErrorWhileLoadingFromCloudMsg -> Update.state(state.errorState(cachedMsg.throwable))
         }
     }
 }

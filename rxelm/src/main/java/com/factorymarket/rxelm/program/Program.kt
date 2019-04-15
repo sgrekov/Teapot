@@ -11,6 +11,7 @@ import com.factorymarket.rxelm.contract.Renderable
 import com.factorymarket.rxelm.contract.RenderableComponent
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.contract.State
+import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.log.LogType
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.msg.ErrorMsg
@@ -48,7 +49,7 @@ import kotlin.reflect.KClass
  * No other changes of View can happen outside of this function
  *
  * All changes of state must be made only in function [Update][Component.update], which is a pure function.
- * There cannot happen any calls to side effects, like IO work, HTTP requests, etc
+ * There cannot happen any calls to side effect, like IO work, HTTP requests, etc
  * All user interactions are processed through inheritances of Msg class.
  * Function [Update][Component.update] returns new State with changed fields and [Command][Cmd].
  *
@@ -61,7 +62,7 @@ import kotlin.reflect.KClass
  * they will be executed in parallel in [io() scheduler][Schedulers.io].
  * If you want to cancel current command when queueing new one,
  * you must send [Command][Cmd] which inherits [SwitchCmd], this will
- * do all side effects in rx [switchMap][Observable.switchMap] operator
+ * do all side effect in rx [switchMap][Observable.switchMap] operator
  *
  * @param outputScheduler the scheduler to [observe on][Observable.observeOn]
  */
@@ -115,7 +116,9 @@ class Program<S : State> internal constructor(
             .observeOn(outputScheduler)
             .map { msg ->
 
-                val (newState, command) = update(msg, component, logger)
+                val update = update(msg, component, logger)
+                val command = update.cmds
+                val newState = update.updatedState ?: state
 
                 if (newState !== this.state) {
                     isRendering = true
@@ -229,7 +232,7 @@ class Program<S : State> internal constructor(
         disposables.add(switchDisposable)
     }
 
-    private fun update(msg: Msg, component: Component<S>, logger: RxElmLogger?): Pair<S, Cmd> {
+    private fun update(msg: Msg, component: Component<S>, logger: RxElmLogger?): Update<S> {
         logger?.takeIf { it.logType().needToShowUpdates() }
             ?.log(this.state.javaClass.simpleName, "update with msg:${msg.javaClass.simpleName} ")
 

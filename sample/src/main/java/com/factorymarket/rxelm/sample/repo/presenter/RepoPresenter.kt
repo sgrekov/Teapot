@@ -1,9 +1,9 @@
 package com.factorymarket.rxelm.sample.repo.presenter
 
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.cmd.None
 import com.factorymarket.rxelm.contract.Component
 import com.factorymarket.rxelm.contract.Renderable
+import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.program.Program
@@ -48,11 +48,11 @@ class RepoPresenter @Inject constructor(
         }
     }
 
-    override fun update(msg: Msg, state: RepoState): Pair<RepoState, Cmd> {
+    override fun update(msg: Msg, state: RepoState): Update<RepoState> {
         return when (msg) {
-            is InitRepo -> state.copy(isLoading = true) to LoadRepo(state.openRepoId)
-            is RepoLoaded -> state.copy(isLoading = false, repository = msg.repo) to None
-            else -> state to None
+            is InitRepo -> Update.update(state.copy(isLoading = true), LoadRepo(state.openRepoId))
+            is RepoLoaded -> Update.state(state.copy(isLoading = false, repository = msg.repo))
+            else -> Update.idle()
         }
     }
 

@@ -28,7 +28,7 @@ class ProgramBuilder {
     }
 
     /**
-     * By default handleCmdErrors is set to true and RxElm handles errors from side effects and sends them in [ErrorMsg]
+     * By default handleCmdErrors is set to true and RxElm handles errors from side effect and sends them in [ErrorMsg]
      * If pass handle=false, then all unhandled errors from [Component.call] will lead to crash
      */
     fun handleCmdErrors(handle: Boolean): ProgramBuilder {

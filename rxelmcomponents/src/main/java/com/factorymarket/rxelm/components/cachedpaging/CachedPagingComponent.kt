@@ -6,12 +6,13 @@ import com.factorymarket.rxelm.cmd.None
 import com.factorymarket.rxelm.components.paging.ErrorLogger
 import com.factorymarket.rxelm.components.paging.LogThrowableCmd
 import com.factorymarket.rxelm.contract.PluginComponent
+import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.statelessEffect
 import io.reactivex.Single
 
 /**
- * For cached paging we have 2 side effects-requests -
+ * For cached paging we have 2 side effect-requests -
  * 1. Request for items in cache
  * 2. Request for items in server
  *
@@ -78,7 +79,7 @@ class CachedPagingComponent<T, FETCH_PARAMS>(
     override fun update(
         msg: Msg,
         state: CachedPagingState<T, FETCH_PARAMS>
-    ): Pair<CachedPagingState<T, FETCH_PARAMS>, Cmd> =
+    ): Update<CachedPagingState<T, FETCH_PARAMS>> =
         when (msg) {
             is CachedPagingStartMsg -> startPaging(state)
             is CachedPagingStartWithParamsMsg<*, *> -> startPaging(
@@ -91,36 +92,44 @@ class CachedPagingComponent<T, FETCH_PARAMS>(
                 msg.items as List<T>,
                 msg.limitRequested
             )
-            is CachedPagingSyncedItemsMsg -> state.copy(
-                isSyncing = false,
-                isCacheLoading = true,
-                totalPages = msg.totalPages
-            ) to CachedPagingLoadItemsFromCacheCmd(
-                (state.nextPage - 1) * state.pageSize,
-                state.fetchParams
+            is CachedPagingSyncedItemsMsg -> Update.update(
+                state.copy(
+                    isSyncing = false,
+                    isCacheLoading = true,
+                    totalPages = msg.totalPages
+                ), CachedPagingLoadItemsFromCacheCmd(
+                    (state.nextPage - 1) * state.pageSize,
+                    state.fetchParams
+                )
             )
             is CachedPagingOnRetryListButtonClickMsg -> loadNextPage(state)
-            is CachedPagingSyncAfterErrorMsg -> state.copy(
-                nextPage = 2,
-                hasSyncError = false,
-                isSyncing = true,
-                isCacheLoading = true,
-                isRefreshingEnabled = true,
-                isRefreshingVisible = true
-            ) to CachedPagingSyncItemsCmd(1, state.pageSize, state.fetchParams)
-            is CachedPagingOnRetryAfterErrorButtonClickMsg -> startPaging(state)
-            is CachedPagingOnSwipeMsg -> state.toRefreshingState()
-                .copy(
+            is CachedPagingSyncAfterErrorMsg -> Update.update(
+                state.copy(
+                    nextPage = 2,
+                    hasSyncError = false,
                     isSyncing = true,
-                    isCacheLoading = true
-                ) to BatchCmd(
-                CachedPagingLoadItemsFromCacheCmd(1 * state.pageSize, state.fetchParams),
-                CachedPagingSyncItemsCmd(1, state.pageSize, state.fetchParams)
+                    isCacheLoading = true,
+                    isRefreshingEnabled = true,
+                    isRefreshingVisible = true
+                ), CachedPagingSyncItemsCmd(1, state.pageSize, state.fetchParams)
+            )
+            is CachedPagingOnRetryAfterErrorButtonClickMsg -> startPaging(state)
+            is CachedPagingOnSwipeMsg -> Update.update(
+                state.toRefreshingState()
+                    .copy(
+                        isSyncing = true,
+                        isCacheLoading = true
+                    ), BatchCmd(
+                    CachedPagingLoadItemsFromCacheCmd(1 * state.pageSize, state.fetchParams),
+                    CachedPagingSyncItemsCmd(1, state.pageSize, state.fetchParams)
+                )
             )
             is CachedPagingErrorMsg -> onErrorMsg(msg, state)
-            is CachedPagingReloadCacheMsg -> state.copy(isCacheLoading = true) to CachedPagingLoadItemsFromCacheCmd(
-                (state.nextPage - 1) * state.pageSize,
-                state.fetchParams
+            is CachedPagingReloadCacheMsg -> Update.update(
+                state.copy(isCacheLoading = true), CachedPagingLoadItemsFromCacheCmd(
+                    (state.nextPage - 1) * state.pageSize,
+                    state.fetchParams
+                )
             )
             else -> throw IllegalArgumentException("Unsupported message $msg")
         }
@@ -128,33 +137,34 @@ class CachedPagingComponent<T, FETCH_PARAMS>(
     private fun startPaging(
         state: CachedPagingState<T, FETCH_PARAMS>,
         fetchParams: FETCH_PARAMS? = null
-    ):
-            Pair<CachedPagingState<T, FETCH_PARAMS>, Cmd> {
+    ): Update<CachedPagingState<T, FETCH_PARAMS>> {
         if (state.isCacheLoading) {
-            return state to None
+            return Update.idle()
         }
 
-        return state.copy(
-            nextPage = 2,
-            hasSyncError = false,
-            isSyncing = true,
-            isCacheLoading = true,
-            isStarted = true,
-            fetchParams = fetchParams ?: state.fetchParams
-        ) to BatchCmd(
-            CachedPagingLoadItemsFromCacheCmd(state.nextPage * state.pageSize, state.fetchParams),
-            CachedPagingSyncItemsCmd(state.nextPage, state.pageSize, state.fetchParams)
+        return Update.update(
+            state.copy(
+                nextPage = 2,
+                hasSyncError = false,
+                isSyncing = true,
+                isCacheLoading = true,
+                isStarted = true,
+                fetchParams = fetchParams ?: state.fetchParams
+            ), BatchCmd(
+                CachedPagingLoadItemsFromCacheCmd(state.nextPage * state.pageSize, state.fetchParams),
+                CachedPagingSyncItemsCmd(state.nextPage, state.pageSize, state.fetchParams)
+            )
         )
     }
 
     @Suppress("UnsafeCast", "UNCHECKED_CAST")
     fun itemsLoadedFromCache(
         state: CachedPagingState<T, FETCH_PARAMS>, items: List<T>, limitRequested: Int
-    ): Pair<CachedPagingState<T, FETCH_PARAMS>, None> {
+    ): Update<CachedPagingState<T, FETCH_PARAMS>> {
         val isResultForFirstPage = limitRequested == state.pageSize
         val isNoMoreCache = items.size < limitRequested
 
-        return state.run {
+        return Update.state(state.run {
             return@run when {
                 items.isEmpty() -> when {
                     isSyncing -> toFullscreenLoadingState()
@@ -170,7 +180,7 @@ class CachedPagingComponent<T, FETCH_PARAMS>(
                 totalPages != null && nextPage > totalPages -> toCompletelyLoadedState()
                 else -> toPageLoadingState()
             }
-        }.copy(isCacheLoading = false, isNoMoreCache = isNoMoreCache, items = items) to None
+        }.copy(isCacheLoading = false, isNoMoreCache = isNoMoreCache, items = items))
     }
 
     @Suppress("UnsafeCast")
@@ -207,37 +217,41 @@ class CachedPagingComponent<T, FETCH_PARAMS>(
         state: CachedPagingState<T, FETCH_PARAMS>
     ) = when (msg.cmd) {
         is CachedPagingLoadItemsFromCacheCmd<*> -> {
-            if (state.items.isEmpty()) {
-                state.toFullscreenErrorState()
-            } else {
-                state.toRetryPageState()
-            }.copy(
-                nextPage = state.nextPage.dec(),
-                isCacheLoading = false
-            ) to LogThrowableCmd(msg.err)
+            Update.update(
+                if (state.items.isEmpty()) {
+                    state.toFullscreenErrorState()
+                } else {
+                    state.toRetryPageState()
+                }.copy(
+                    nextPage = state.nextPage.dec(),
+                    isCacheLoading = false
+                ), LogThrowableCmd(msg.err)
+            )
         }
-        is CachedPagingSyncItemsCmd<*> -> state.run {
+        is CachedPagingSyncItemsCmd<*> -> Update.update(state.run {
             return@run when {
                 items.isEmpty() && isCacheLoading -> toFullscreenLoadingState()
                 items.isEmpty() -> toFullscreenErrorState()
                 items.size < pageSize -> toListStateWithSyncError()
                 else -> toLoadingStateWithSyncError()
             }
-        }.copy(isSyncing = false, hasSyncError = true) to LogThrowableCmd(msg.err)
+        }.copy(isSyncing = false, hasSyncError = true), LogThrowableCmd(msg.err))
         else -> throw IllegalArgumentException("Can't handle msg $msg")
     }
 
     private fun <T> loadNextPage(state: CachedPagingState<T, FETCH_PARAMS>):
-            Pair<CachedPagingState<T, FETCH_PARAMS>, Cmd> {
+            Update<CachedPagingState<T, FETCH_PARAMS>> {
         if (state.isCacheLoading) {
-            return state to None
+            return Update.idle()
         }
 
-        return state.toPageLoadingState().copy(
-            nextPage = state.nextPage.inc(), isCacheLoading = true, isSyncing = true
-        ) to BatchCmd(
-            CachedPagingLoadItemsFromCacheCmd(state.nextPage * state.pageSize, state.fetchParams),
-            CachedPagingSyncItemsCmd(state.nextPage, state.pageSize, state.fetchParams)
+        return Update.update(
+            state.toPageLoadingState().copy(
+                nextPage = state.nextPage.inc(), isCacheLoading = true, isSyncing = true
+            ), BatchCmd(
+                CachedPagingLoadItemsFromCacheCmd(state.nextPage * state.pageSize, state.fetchParams),
+                CachedPagingSyncItemsCmd(state.nextPage, state.pageSize, state.fetchParams)
+            )
         )
     }
 }

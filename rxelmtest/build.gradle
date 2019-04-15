@@ -8,7 +8,6 @@ dependencies {
     implementation project(':rxelm')
 
     implementation 'junit:junit:4.12'
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 }
 
 sourceCompatibility = "1.7"

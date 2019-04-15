@@ -41,7 +41,7 @@ class RxElmSpec<S : State> constructor(val component: Component<S>) {
 
     fun whenMsg(msg: Msg): RxElmSpec<S> {
         val (newState, cmd) = component.update(msg, state)
-        return this.withState(newState, state).withCmd(cmd)
+        return this.withState(newState ?: state, state).withCmd(cmd)
     }
 
     fun thenCmd(assertionCmd: Cmd): RxElmSpec<S> {

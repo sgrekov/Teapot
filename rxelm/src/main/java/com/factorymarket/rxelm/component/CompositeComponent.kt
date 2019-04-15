@@ -6,6 +6,7 @@ import com.factorymarket.rxelm.contract.Component
 import com.factorymarket.rxelm.contract.PluginComponent
 import com.factorymarket.rxelm.contract.Renderable
 import com.factorymarket.rxelm.contract.State
+import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.msg.Msg
@@ -89,19 +90,18 @@ class CompositeComponent<S : State>(
     }
 
     @Suppress("UNCHECKED_CAST", "UnsafeCast")
-    override fun update(msg: Msg, state: S): Pair<S, Cmd> {
+    override fun update(msg: Msg, state: S): Update<S> {
         var combinedCmd = BatchCmd()
         var combinedState = state
         components.forEach { (component, toSubStateFun, toMainStateFun) ->
             if (component.handlesMessage(msg)) {
-                val (componentState, componentCmd) = component.update(
-                    msg,
-                    toSubStateFun?.let { it(combinedState) } ?: combinedState
-                )
-                combinedState = toMainStateFun?.let { it(componentState, combinedState) } ?: componentState as S
+                val subState = toSubStateFun?.let { it(combinedState) } ?: combinedState
+                val (componentState, componentCmd) = component.update(msg, subState)
+                val updatedState = componentState ?: subState
+                combinedState = toMainStateFun?.let { it(updatedState, combinedState) } ?: componentState as S
                 combinedCmd = combinedCmd.merge(componentCmd)
             }
         }
-        return combinedState to (combinedCmd as Cmd)
+        return Update.update(combinedState, (combinedCmd as Cmd))
     }
 }
