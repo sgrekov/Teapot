@@ -166,9 +166,7 @@ class Program<S : State> internal constructor(
 
                 val commandDisposables = commandDisposablesMap[cmd.cancelCmd.hashCode()]
                 if (commandDisposables != null && !commandDisposables.isDisposed) {
-                    logger?.takeIf { logger.logType().needToShowCommands() }?.let {
-                        logger.log(this.state.javaClass.simpleName, "elm cancel cmd:${cmd.cancelCmd}")
-                    }
+                    logCmd("elm cancel cmd:${cmd.cancelCmd}")
                     commandDisposables.dispose()
                 }
             }
@@ -185,9 +183,7 @@ class Program<S : State> internal constructor(
     }
 
     private fun handleCmd(cmd: Cmd) {
-        logger?.takeIf { logger.logType().needToShowCommands() }?.let {
-            logger.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
-        }
+        logCmd("elm call cmd:$cmd")
 
         val cmdObservable = cmdCall(cmd).subscribeOn(Schedulers.io())
         val disposable = handleResponse(cmdObservable)
@@ -220,21 +216,23 @@ class Program<S : State> internal constructor(
 
     private fun subscribeSwitchRelay(relay: BehaviorRelay<SwitchCmd>) {
         val switchDisposable = handleResponse(relay.switchMap { cmd ->
-            logger?.takeIf { it.logType().needToShowCommands() }
-                ?.log(this.state.javaClass.simpleName, "elm call cmd:$cmd")
+            logCmd("elm call cmd: $cmd")
 
             cmdCall(cmd).subscribeOn(Schedulers.io()).doOnDispose {
-                logger?.takeIf { it.logType().needToShowCommands() }
-                    ?.log(this.state.javaClass.simpleName, "elm dispose cmd:$cmd")
+                logCmd("elm dispose cmd:$cmd")
             }
         })
 
         disposables.add(switchDisposable)
     }
 
+    private fun logCmd(message : String) {
+        logger?.takeIf { it.logType().needToShowCommands() }
+            ?.log(this.state.javaClass.simpleName, message)
+    }
+
     private fun update(msg: Msg, component: Component<S>, logger: RxElmLogger?): Update<S> {
-        logger?.takeIf { it.logType().needToShowUpdates() }
-            ?.log(this.state.javaClass.simpleName, "update with msg:${msg.javaClass.simpleName} ")
+        logUpdate(logger, msg)
 
         val updateResult = component.update(msg, this.state)
 
@@ -243,6 +241,11 @@ class Program<S : State> internal constructor(
         }
 
         return updateResult
+    }
+
+    private fun logUpdate(logger: RxElmLogger?, msg: Msg) {
+        logger?.takeIf { it.logType().needToShowUpdates() }
+            ?.log(this.state.javaClass.simpleName, "update with msg:${msg.javaClass.simpleName} ")
     }
 
     private fun handleResponse(observable: Observable<Msg>): Disposable {
@@ -273,15 +276,20 @@ class Program<S : State> internal constructor(
 
 
     private fun pickNextMessageFromQueue() {
+        logPickNextMessageFromQueue()
+
+        if (!lock && messageQueue.size > 0) {
+            lock = true
+            messageRelay.accept(messageQueue.first)
+        }
+    }
+
+    private fun logPickNextMessageFromQueue() {
         logger?.takeIf { logger.logType() == LogType.All }?.let {
             logger.log(
                 this.state.javaClass.simpleName,
                 "pickNextMessageFromQueue, queue size:${messageQueue.size}"
             )
-        }
-        if (!lock && messageQueue.size > 0) {
-            lock = true
-            messageRelay.accept(messageQueue.first)
         }
     }
 
@@ -292,15 +300,20 @@ class Program<S : State> internal constructor(
     }
 
     fun accept(msg: Msg) {
-        logger?.takeIf { logger.logType() == LogType.All }?.log(
-            this.state.javaClass.simpleName,
-            "accept msg: ${msg.javaClass.simpleName}, queue size:${messageQueue.size} lock:$lock "
-        )
+        logAccept(logger, msg)
+
         messageQueue.addLast(msg)
         if (!lock && messageQueue.size == 1) {
             lock = true
             messageRelay.accept(messageQueue.first)
         }
+    }
+
+    private fun logAccept(logger: RxElmLogger?, msg: Msg) {
+        logger?.takeIf { logger.logType() == LogType.All }?.log(
+            this.state.javaClass.simpleName,
+            "accept msg: ${msg.javaClass.simpleName}, queue size:${messageQueue.size} lock:$lock "
+        )
     }
 
     fun getState(): S? {
