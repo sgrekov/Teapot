@@ -92,16 +92,17 @@ class CompositeComponent<S : State>(
     @Suppress("UNCHECKED_CAST", "UnsafeCast")
     override fun update(msg: Msg, state: S): Update<S> {
         var combinedCmd = BatchCmd()
-        var combinedState = state
+        var mainComponentState = state
         components.forEach { (component, toSubStateFun, toMainStateFun) ->
             if (component.handlesMessage(msg)) {
-                val subState = toSubStateFun?.let { it(combinedState) } ?: combinedState
-                val (componentState, componentCmd) = component.update(msg, subState)
-                val updatedState = componentState ?: subState
-                combinedState = toMainStateFun?.let { it(updatedState, combinedState) } ?: componentState as S
+                val componentStateBeforeUpdate = toSubStateFun?.invoke(mainComponentState) ?: mainComponentState
+                val (componentStateAfterUpdate, componentCmd) = component.update(msg, componentStateBeforeUpdate)
+                val updatedState = componentStateAfterUpdate ?: componentStateBeforeUpdate
+                mainComponentState = toMainStateFun?.invoke(updatedState, mainComponentState)
+                        ?: run { if (componentStateAfterUpdate != null) componentStateAfterUpdate as S else mainComponentState }
                 combinedCmd = combinedCmd.merge(componentCmd)
             }
         }
-        return Update.update(combinedState, (combinedCmd as Cmd))
+        return Update.update(mainComponentState, (combinedCmd as Cmd))
     }
 }
