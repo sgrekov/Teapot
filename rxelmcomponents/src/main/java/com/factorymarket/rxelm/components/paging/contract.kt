@@ -6,7 +6,7 @@ data class PagingResult<T>(val items: List<T>, val totalPages: Int, val totalCou
 
 interface PagingCommandsHandler<T, PARAMS> {
 
-    fun fetchPage(page: Int, params: PARAMS): Single<PagingResult<T>>
+    fun fetchPage(page: Int, params: PARAMS?): Single<PagingResult<T>>
 }
 
 interface PagingView  {

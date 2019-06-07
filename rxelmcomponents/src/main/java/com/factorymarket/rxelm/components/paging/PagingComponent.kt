@@ -3,7 +3,6 @@ package com.factorymarket.rxelm.components.paging
 import com.factorymarket.rxelm.cmd.BatchCmd
 import com.factorymarket.rxelm.cmd.CancelCmd
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.cmd.None
 import com.factorymarket.rxelm.contract.PluginComponent
 import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.Msg
@@ -12,7 +11,7 @@ import io.reactivex.Single
 
 class PagingComponent<T, FETCH_PARAMS>(
     private val cmdHandlerPaging: PagingCommandsHandler<T, FETCH_PARAMS>,
-    private val fetchParams: FETCH_PARAMS,
+    private val fetchParams: FETCH_PARAMS?,
     private val errorLogger: ErrorLogger? = null,
     private val namespace: String = ""
 ) : PluginComponent<PagingState<T, FETCH_PARAMS>> {
@@ -33,9 +32,9 @@ class PagingComponent<T, FETCH_PARAMS>(
     @Suppress("UnsafeCast", "UNCHECKED_CAST")
     override fun update(msg: Msg, state: PagingState<T, FETCH_PARAMS>): Update<PagingState<T, FETCH_PARAMS>> =
         when (msg) {
-            is PagingStartMsg -> startPaging(state)
+            is PagingStartMsg -> startPaging(state, state.fetchParams)
 
-            is PagingStartWithParamsMsg<*, *> -> startPaging(state, msg.params as? FETCH_PARAMS)
+            is PagingStartWithParamsMsg<*, *> -> startPaging(state, msg.fetchParams as? FETCH_PARAMS)
 
             is PagingOnScrolledToEndMsg -> loadNextPage(state)
 
@@ -53,7 +52,7 @@ class PagingComponent<T, FETCH_PARAMS>(
                 )
             is PagingOnSwipeMsg -> Update.update(
                 state.toRefreshingState().copy(isPageLoading = true), BatchCmd(
-                    //no matter what params we pass except namespace, since we've override hashcode() method
+                    //no matter what fetchParams we pass except namespace, since we've override hashcode() method
                     CancelCmd(PagingLoadItemsCmd(1, state.fetchParams, namespace)),
                     CancelCmd(PagingRefreshItemsCmd(state.fetchParams, namespace)),
                     PagingRefreshItemsCmd(state.fetchParams, ns = namespace)
@@ -71,12 +70,12 @@ class PagingComponent<T, FETCH_PARAMS>(
                 .copy(
                     isPageLoading = true,
                     isStarted = true,
-                    fetchParams = fetchParams ?: state.fetchParams
+                    fetchParams = fetchParams
                 ), BatchCmd(
-                //no matter what params we pass except namespace, since we've override hashcode() method
+                //no matter what fetchParams we pass except namespace, since we've override hashcode() method
                 CancelCmd(PagingLoadItemsCmd(1, state.fetchParams, namespace)),
                 CancelCmd(PagingRefreshItemsCmd(state.fetchParams, namespace)),
-                PagingRefreshItemsCmd(fetchParams ?: state.fetchParams, ns = namespace)
+                PagingRefreshItemsCmd(fetchParams, ns = namespace)
             )
         )
     }
@@ -101,7 +100,7 @@ class PagingComponent<T, FETCH_PARAMS>(
 
     @Suppress("UnsafeCast", "UNCHECKED_CAST")
     override fun call(cmd: Cmd): Single<Msg> = when (cmd) {
-        is PagingLoadItemsCmd<*> -> cmdHandlerPaging.fetchPage(cmd.page, cmd.params as FETCH_PARAMS).map {
+        is PagingLoadItemsCmd<*> -> cmdHandlerPaging.fetchPage(cmd.page, cmd.params as? FETCH_PARAMS).map {
             PagingOnLoadedItemsMsg(
                 it.items,
                 it.totalPages,
@@ -110,7 +109,7 @@ class PagingComponent<T, FETCH_PARAMS>(
             ) as Msg
         }.onErrorResumeNext { Single.just(PagingErrorMsg(it, cmd, ns = namespace)) }
 
-        is PagingRefreshItemsCmd<*> -> cmdHandlerPaging.fetchPage(1, cmd.params as FETCH_PARAMS).map {
+        is PagingRefreshItemsCmd<*> -> cmdHandlerPaging.fetchPage(1, cmd.params as? FETCH_PARAMS).map {
             PagingOnRefreshedItemsMsg(
                 it.items,
                 it.totalPages,
@@ -135,10 +134,10 @@ class PagingComponent<T, FETCH_PARAMS>(
                     state.toErrorState()
                 } else {
                     state.toRetryState()
-                }.copy(nextPage = state.nextPage.dec()), LogThrowableCmd(msg.err)
+                }.copy(nextPage = state.nextPage.dec()), LogThrowableCmd(msg.err, namespace)
             )
         }
-        is PagingRefreshItemsCmd<*> -> Update.update(state.toErrorState(), LogThrowableCmd(msg.err))
+        is PagingRefreshItemsCmd<*> -> Update.update(state.toErrorState(), LogThrowableCmd(msg.err, namespace))
         else -> throw IllegalArgumentException("Can't handle msg $msg")
     }
 

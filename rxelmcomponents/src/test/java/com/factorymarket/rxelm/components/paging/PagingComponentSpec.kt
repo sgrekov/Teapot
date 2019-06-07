@@ -18,7 +18,7 @@ class PagingComponentSpec : DescribeSpec({
         val pagingComponent: PagingComponent<String, Unit> =
             PagingComponent(object : PagingCommandsHandler<String, Unit> {
 
-                override fun fetchPage(page: Int, params: Unit): Single<PagingResult<String>> {
+                override fun fetchPage(page: Int, params: Unit?): Single<PagingResult<String>> {
                     return Single.just(PagingResult(listOf(), 4))
                 }
             }, Unit)
