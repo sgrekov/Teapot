@@ -1,23 +1,15 @@
 package com.factorymarket.rxelm.program
 
-import com.factorymarket.rxelm.cmd.BatchCmd
-import com.factorymarket.rxelm.cmd.CancelByClassCmd
-import com.factorymarket.rxelm.cmd.CancelCmd
-import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.cmd.None
-import com.factorymarket.rxelm.cmd.SwitchCmd
+import com.factorymarket.rxelm.cmd.*
 import com.factorymarket.rxelm.contract.Component
 import com.factorymarket.rxelm.contract.Renderable
 import com.factorymarket.rxelm.contract.RenderableComponent
-import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.log.LogType
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.middleware.Middleware
-import com.factorymarket.rxelm.msg.ErrorMsg
-import com.factorymarket.rxelm.msg.Idle
-import com.factorymarket.rxelm.msg.Init
+import com.factorymarket.rxelm.msg.*
 import com.factorymarket.rxelm.sub.RxElmSubscriptions
 import com.jakewharton.rxrelay2.BehaviorRelay
 import com.jakewharton.rxrelay2.Relay
@@ -119,7 +111,7 @@ class Program<S : State> internal constructor(
             .map { msg ->
 
                 processBeforeUpdateToMiddlewares(msg, this.state)
-                
+
                 val update = update(msg, component, logger)
                 val command = update.cmds
                 val newState = update.updatedState ?: state
@@ -196,6 +188,7 @@ class Program<S : State> internal constructor(
                     }
                 }
             }
+            is ProxyCmd -> accept(cmd.msg)
             else -> handleCmd(cmd)
         }
     }
@@ -252,7 +245,9 @@ class Program<S : State> internal constructor(
     private fun update(msg: Msg, component: Component<S>, logger: RxElmLogger?): Update<S> {
         logUpdate(logger, msg)
 
-        val updateResult = component.update(msg, this.state)
+        val updateResult = if (msg is ProxyMsg) {
+            Update.effect(msg.cmd)
+        } else component.update(msg, this.state)
 
         if (messageQueue.size > 0) {
             messageQueue.removeFirst()
@@ -325,6 +320,10 @@ class Program<S : State> internal constructor(
             lock = true
             messageRelay.accept(messageQueue.first)
         }
+    }
+
+    fun acceptCommand(cmd : Cmd){
+        accept(ProxyMsg(cmd))
     }
 
     private fun logAccept(logger: RxElmLogger?, msg: Msg) {
