@@ -4,6 +4,7 @@ import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.program.Program
 import io.reactivex.Observable
+import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import java.util.LinkedList
 import java.util.Queue
@@ -53,7 +54,7 @@ class RxElmSubscriptions<S : State> {
      *
      * If it is, subscribes them if not - just delete.
      */
-    fun subscribe(program: Program<S>, state: S) {
+    fun subscribe(program: Program<S>, state: S, scheduler: Scheduler) {
         moveConditionalSubsToSubsIfTheyMatchPredicate(state)
 
         if (subs.isEmpty()) {
@@ -62,7 +63,7 @@ class RxElmSubscriptions<S : State> {
         var sub = subs.poll()
         while (sub != null) {
             val disposable = sub
-                .observeOn(program.outputScheduler)
+                .observeOn(scheduler)
                 .subscribe { msg ->
                     program.accept(msg)
                 }

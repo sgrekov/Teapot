@@ -3,6 +3,7 @@ package com.factorymarket.rxelm.program
 import com.factorymarket.rxelm.contract.Component
 import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.log.RxElmLogger
+import com.factorymarket.rxelm.middleware.Middleware
 import io.reactivex.Scheduler
 import java.lang.IllegalArgumentException
 import com.factorymarket.rxelm.msg.ErrorMsg
@@ -12,6 +13,7 @@ class ProgramBuilder {
     private var outputScheduler: Scheduler? = null
     private var logger: RxElmLogger? = null
     private var handleCmdErrors: Boolean = true
+    private var middlewares: MutableList<Middleware> = mutableListOf()
 
     /**
      * @param scheduler must be single threaded, like Schedulers.single() or AndroidSchedulers.mainThread(),
@@ -25,6 +27,10 @@ class ProgramBuilder {
     fun logger(logger: RxElmLogger): ProgramBuilder {
         this.logger = logger
         return this
+    }
+
+    fun addMiddleware(m : Middleware) {
+        middlewares.add(m)
     }
 
     /**
@@ -41,6 +47,6 @@ class ProgramBuilder {
             throw IllegalArgumentException("Output Scheduler must be provided!")
         }
 
-        return Program(outputScheduler!!, logger, handleCmdErrors, component)
+        return Program(outputScheduler!!, logger, handleCmdErrors, component, middlewares)
     }
 }

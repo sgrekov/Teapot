@@ -14,6 +14,7 @@ import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.log.LogType
 import com.factorymarket.rxelm.log.RxElmLogger
+import com.factorymarket.rxelm.middleware.Middleware
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Init
@@ -67,10 +68,11 @@ import kotlin.reflect.KClass
  * @param outputScheduler the scheduler to [observe on][Observable.observeOn]
  */
 class Program<S : State> internal constructor(
-    val outputScheduler: Scheduler,
+    private val outputScheduler: Scheduler,
     private val logger: RxElmLogger?,
     private val handleCmdErrors: Boolean,
-    private val component: Component<S>
+    private val component: Component<S>,
+    private val middlewares: List<Middleware>
 ) {
 
     private val messageRelay: BehaviorRelay<Msg> = BehaviorRelay.create()
@@ -116,9 +118,13 @@ class Program<S : State> internal constructor(
             .observeOn(outputScheduler)
             .map { msg ->
 
+                processBeforeUpdateToMiddlewares(msg, this.state)
+                
                 val update = update(msg, component, logger)
                 val command = update.cmds
                 val newState = update.updatedState ?: state
+
+                processAfterUpdateMiddlewares(msg, newState)
 
                 if (newState !== this.state) {
                     isRendering = true
@@ -133,7 +139,7 @@ class Program<S : State> internal constructor(
                 this.state = newState
                 lock = false
 
-                this.rxElmSubscriptions?.subscribe(this, newState)
+                this.rxElmSubscriptions?.subscribe(this, newState, outputScheduler)
 
                 pickNextMessageFromQueue()
 
@@ -153,6 +159,18 @@ class Program<S : State> internal constructor(
                 }
 
             }
+    }
+
+    private fun processAfterUpdateMiddlewares(msg: Msg, newState: S) {
+        middlewares.forEach { middleware ->
+            middleware.afterUpdate(msg, newState)
+        }
+    }
+
+    private fun processBeforeUpdateToMiddlewares(msg: Msg, oldState: S) {
+        middlewares.forEach { middleware ->
+            middleware.beforeUpdate(msg, oldState)
+        }
     }
 
     private fun executeCommand(cmd: Cmd) {
