@@ -20,9 +20,8 @@ import java.util.Queue
  */
 class RxElmSubscriptions<S : State> {
 
-    private val subs: Queue<Observable<out Msg>> = LinkedList<Observable<out Msg>>()
-    private val conditionalSubs: Queue<Pair<(S) -> Boolean, Observable<out Msg>>> =
-        LinkedList<Pair<(S) -> Boolean, Observable<out Msg>>>()
+    private val subs: Queue<Observable<out Msg>> = LinkedList()
+    private val conditionalSubs: Queue<Pair<(S) -> Boolean, Observable<out Msg>>> = LinkedList()
     private val compositeDisposable: CompositeDisposable = CompositeDisposable()
 
     /**

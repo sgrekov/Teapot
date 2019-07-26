@@ -3,7 +3,8 @@ package com.factorymarket.rxelm.sample.main.presenter
 
 import com.factorymarket.rxelm.cmd.CancelByClassCmd
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.contract.RenderableComponent
+import com.factorymarket.rxelm.contract.Component
+import com.factorymarket.rxelm.contract.Renderable
 import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Init
@@ -28,7 +29,7 @@ class MainPresenter @Inject constructor(
     programBuilder: ProgramBuilder,
     private val service: IApiService,
     private val navigator: Navigator
-) : RenderableComponent<MainState> {
+) : Component<MainState>, Renderable<MainState> {
 
     private val program: Program<MainState> = programBuilder.build(this)
 
@@ -72,7 +73,7 @@ class MainPresenter @Inject constructor(
 
     override fun call(cmd: Cmd): Single<Msg> {
         return when (cmd) {
-            is LoadReposCmd -> service.getStarredRepos(cmd.userName).delay(2,TimeUnit.SECONDS)
+            is LoadReposCmd -> service.getStarredRepos(cmd.userName).delay(1,TimeUnit.SECONDS)
                 .map { repos -> ReposLoadedMsg(repos) }
             else -> Single.just(Idle)
         }

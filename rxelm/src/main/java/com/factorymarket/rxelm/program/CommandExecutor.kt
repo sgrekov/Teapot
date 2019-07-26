@@ -11,15 +11,19 @@ import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.msg.Msg
 import com.jakewharton.rxrelay2.BehaviorRelay
 import com.jakewharton.rxrelay2.Relay
+import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import java.util.*
+import java.util.TreeMap
+import kotlin.collections.HashMap
 
 class RxCommandExecutor<S : State>(
         private val component: Component<S>,
+        private val messageConsumer: MessageConsumer,
+        private val logTag : String,
         private val handleCmdErrors: Boolean,
         private val outputScheduler: Scheduler,
         private val logger: RxElmLogger?) {
@@ -35,7 +39,8 @@ class RxCommandExecutor<S : State>(
                 relay.accept(cmd)
             }
             is CancelCmd -> {
-                val commandDisposablesMap = commandsDisposablesMap[cmd.cancelCmd.hashCode()] ?: return
+                val commandDisposablesMap = commandsDisposablesMap[cmd.cancelCmd.hashCode()]
+                        ?: return
 
                 val commandDisposables = commandDisposablesMap[cmd.cancelCmd.hashCode()]
                 if (commandDisposables != null && !commandDisposables.isDisposed) {
@@ -44,7 +49,8 @@ class RxCommandExecutor<S : State>(
                 }
             }
             is CancelByClassCmd<*> -> {
-                val commandDisposablesMap = commandsDisposablesMap[cmd.cmdClass.hashCode()] ?: return
+                val commandDisposablesMap = commandsDisposablesMap[cmd.cmdClass.hashCode()]
+                        ?: return
                 commandDisposablesMap.values.forEach { disposable ->
                     if (!disposable.isDisposed) {
                         disposable.dispose()
@@ -59,11 +65,7 @@ class RxCommandExecutor<S : State>(
         return observable
                 .observeOn(outputScheduler)
                 .subscribe { msg ->
-                    if (msg !is Idle) {
-                        messageQueue.addLast(msg)
-                    }
-
-                    pickNextMessageFromQueue()
+                    messageConsumer.accept(msg)
                 }
     }
 
@@ -74,13 +76,13 @@ class RxCommandExecutor<S : State>(
         val cmdObservable = cmdCall(cmd).subscribeOn(Schedulers.io())
         val disposable = handleResponse(cmdObservable)
         val cmdDisposablesMap = commandsDisposablesMap[cmd::class.hashCode()]
-        cmdDisposablesMap?.let {
+        if (cmdDisposablesMap != null) {
             val oldDisposable = cmdDisposablesMap[cmd.hashCode()]
             if (oldDisposable != null && !oldDisposable.isDisposed) {
                 disposables.add(oldDisposable)
             }
             cmdDisposablesMap[cmd.hashCode()] = disposable
-        } ?: run {
+        } else {
             val disposablesMap = TreeMap<Int, Disposable>()
             disposablesMap[cmd.hashCode()] = disposable
             commandsDisposablesMap[cmd::class.hashCode()] = disposablesMap
@@ -100,7 +102,7 @@ class RxCommandExecutor<S : State>(
 
     private fun logCmd(message: String) {
         logger?.takeIf { it.logType().needToShowCommands() }
-                ?.log(this.state.javaClass.simpleName, message)
+                ?.log(logTag, message)
     }
 
     private fun subscribeSwitchRelay(relay: BehaviorRelay<SwitchCmd>) {
@@ -115,12 +117,12 @@ class RxCommandExecutor<S : State>(
         disposables.add(switchDisposable)
     }
 
-    private fun cmdCall(cmd: Cmd): io.reactivex.Observable<Msg> {
-        component
+    private fun cmdCall(cmd: Cmd): Observable<Msg> {
+
         return if (handleCmdErrors) {
             component.call(cmd)
                     .onErrorResumeNext { err ->
-                        logger?.takeIf { it.logType().needToShowCommands() }?.error(this.state.javaClass.simpleName, err)
+                        logger?.takeIf { it.logType().needToShowCommands() }?.error(logTag, err)
                         Single.just(ErrorMsg(err, cmd))
                     }
                     .toObservable()

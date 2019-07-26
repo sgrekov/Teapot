@@ -50,13 +50,6 @@ data class Update<S : State>(val updatedState : S?, val cmds : Cmd) {
 }
 
 
-interface RenderableComponent<S : State> : Component<S> {
-
-    /** Just render current state, no changes invoked */
-    fun render(state: S)
-
-}
-
 interface Renderable<S : State> {
 
     /** Just render current state, no changes invoked */

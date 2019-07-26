@@ -1,7 +1,8 @@
 package com.factorymarket.rxelm.sample.login.presenter
 
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.contract.RenderableComponent
+import com.factorymarket.rxelm.contract.Component
+import com.factorymarket.rxelm.contract.Renderable
 import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.msg.Init
@@ -38,7 +39,7 @@ class LoginPresenter @Inject constructor(
     private val appPrefs: IAppPrefs,
     private val apiService: IApiService,
     private val navigator: Navigator
-) : RenderableComponent<LoginState> {
+) : Component<LoginState>, Renderable<LoginState> {
 
     private val program: Program<LoginState> = programBuilder.build(this)
 

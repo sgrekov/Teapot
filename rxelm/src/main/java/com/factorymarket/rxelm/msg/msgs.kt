@@ -2,7 +2,7 @@ package com.factorymarket.rxelm.msg
 
 import com.factorymarket.rxelm.cmd.Cmd
 
-sealed class AbstractMsg
+open class AbstractMsg
 /**
  * Base class for representing common messages (events).
  * Messages could be like `user pressed button`, `network data received` etc

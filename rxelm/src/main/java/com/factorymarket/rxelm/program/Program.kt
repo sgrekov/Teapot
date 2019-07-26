@@ -6,12 +6,12 @@ import com.factorymarket.rxelm.cmd.None
 import com.factorymarket.rxelm.cmd.SwitchCmd
 import com.factorymarket.rxelm.contract.Component
 import com.factorymarket.rxelm.contract.Renderable
-import com.factorymarket.rxelm.contract.RenderableComponent
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.log.LogType
 import com.factorymarket.rxelm.log.RxElmLogger
+import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.sub.RxElmSubscriptions
 import com.jakewharton.rxrelay2.BehaviorRelay
@@ -61,18 +61,19 @@ import java.util.ArrayDeque
 class Program<S : State> internal constructor(
         val outputScheduler: Scheduler,
         private val logger: RxElmLogger?,
-        handleCmdErrors: Boolean,
+        private val handleCmdErrors: Boolean,
         private val component: Component<S>
 ) : MessageConsumer {
 
     private val messageRelay: BehaviorRelay<Msg> = BehaviorRelay.create()
-    private val commandExecutor = RxCommandExecutor(component, handleCmdErrors, outputScheduler, logger)
 
     /** Here messages are kept until they can be passed to messageRelay */
     private var messageQueue = ArrayDeque<Msg>()
 
     /** State at this moment */
     private lateinit var state: S
+
+    private lateinit var commandExecutor : RxCommandExecutor<S>
 
     private var lock: Boolean = false
     private var isRendering: Boolean = false
@@ -96,6 +97,7 @@ class Program<S : State> internal constructor(
     private fun init(initialState: S, rxElmSubscriptions: RxElmSubscriptions<S>?) {
         this.state = initialState
         this.rxElmSubscriptions = rxElmSubscriptions
+        this.commandExecutor = RxCommandExecutor(component, this, state.javaClass.simpleName, handleCmdErrors, outputScheduler, logger)
 
         val loopDisposable = createLoop(component, logger)
 
@@ -115,8 +117,6 @@ class Program<S : State> internal constructor(
                         isRendering = true
                         if (component is Renderable<*>) {
                             (component as Renderable<S>).render(newState)
-                        } else if (component is RenderableComponent) {
-                            component.render(newState)
                         }
                         isRendering = false
                     }
@@ -181,15 +181,17 @@ class Program<S : State> internal constructor(
     }
 
     fun render() {
-        if (component is RenderableComponent) {
-            component.render(this.state)
+        if (component is Renderable<*>) {
+            (component as Renderable<S>).render(this.state)
         }
     }
 
-    fun accept(msg: Msg) {
+    override fun accept(msg: Msg) {
         logAccept(logger, msg)
 
-        messageQueue.addLast(msg)
+        if (msg !is Idle) {
+            messageQueue.addLast(msg)
+        }
         if (!lock && messageQueue.size == 1) {
             lock = true
             messageRelay.accept(messageQueue.first)
