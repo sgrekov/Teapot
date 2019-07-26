@@ -28,7 +28,7 @@ interface Component<S : State> {
     fun call(cmd: Cmd): Single<Msg>
 }
 
-data class Update<S : State>(val updatedState : S?, val cmds : Cmd) {
+class Update<S : State> private constructor(val updatedState : S?, val cmds : Cmd) {
 
     companion object {
         fun <S : State> idle() : Update<S> {

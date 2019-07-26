@@ -10,6 +10,7 @@ import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.msg.Msg
+import com.factorymarket.rxelm.msg.ProxyMsg
 import com.factorymarket.rxelm.program.Program
 import com.factorymarket.rxelm.program.ProgramBuilder
 import com.factorymarket.rxelm.sub.RxElmSubscriptions
@@ -29,6 +30,10 @@ class CompositeComponent<S : State>(
 
     fun accept(msg: Msg) {
         program.accept(msg)
+    }
+
+    fun acceptCommand(cmd : Cmd){
+        accept(ProxyMsg(cmd))
     }
 
     fun state(): S? {
@@ -96,7 +101,9 @@ class CompositeComponent<S : State>(
         components.forEach { (component, toSubStateFun, toMainStateFun) ->
             if (component.handlesMessage(msg)) {
                 val componentStateBeforeUpdate = toSubStateFun?.invoke(mainComponentState) ?: mainComponentState
-                val (componentStateAfterUpdate, componentCmd) = component.update(msg, componentStateBeforeUpdate)
+                val update = component.update(msg, componentStateBeforeUpdate)
+                val componentStateAfterUpdate = update.updatedState
+                val componentCmd = update.cmds
                 val updatedState = componentStateAfterUpdate ?: componentStateBeforeUpdate
                 mainComponentState = toMainStateFun?.invoke(updatedState, mainComponentState)
                         ?: run { if (componentStateAfterUpdate != null) componentStateAfterUpdate as S else mainComponentState }
