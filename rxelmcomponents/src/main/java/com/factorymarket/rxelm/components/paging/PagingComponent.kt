@@ -4,7 +4,9 @@ import com.factorymarket.rxelm.cmd.BatchCmd
 import com.factorymarket.rxelm.cmd.CancelCmd
 import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.None
+import com.factorymarket.rxelm.contract.Effect
 import com.factorymarket.rxelm.contract.PluginComponent
+import com.factorymarket.rxelm.contract.RxEffect
 import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.statelessEffect
@@ -99,8 +101,12 @@ class PagingComponent<T, FETCH_PARAMS>(
         )
     }
 
+    override fun call(cmd: Cmd): Effect {
+        return RxEffect(rxEffect(cmd))
+    }
+
     @Suppress("UnsafeCast", "UNCHECKED_CAST")
-    override fun call(cmd: Cmd): Single<Msg> = when (cmd) {
+    fun rxEffect(cmd: Cmd): Single<Msg> = when (cmd) {
         is PagingLoadItemsCmd<*> -> cmdHandlerPaging.fetchPage(cmd.page, cmd.params as FETCH_PARAMS).map {
             PagingOnLoadedItemsMsg(
                 it.items,

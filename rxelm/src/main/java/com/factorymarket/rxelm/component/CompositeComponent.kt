@@ -2,30 +2,25 @@ package com.factorymarket.rxelm.component
 
 import com.factorymarket.rxelm.cmd.BatchCmd
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.contract.Component
-import com.factorymarket.rxelm.contract.PluginComponent
-import com.factorymarket.rxelm.contract.Renderable
-import com.factorymarket.rxelm.contract.State
-import com.factorymarket.rxelm.contract.Update
+import com.factorymarket.rxelm.contract.*
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.program.Program
-import com.factorymarket.rxelm.program.ProgramBuilder
-import com.factorymarket.rxelm.sub.RxElmSubscriptions
+import com.factorymarket.rxelm.sub.Sub
 import io.reactivex.Single
-import java.lang.IllegalStateException
 
 class CompositeComponent<S : State>(
-    programBuilder: ProgramBuilder,
+    private val program: Program<S>,
+//    private val programBuilder: ProgramBuilder,
     private var renderer: Renderable<S>
-) : Component<S>, Renderable<S> {
+) : Component<S, Effect>, Renderable<S> {
 
     private val components: MutableList<
             Triple<PluginComponent<State>, ((mainState: S) -> State)?, ((subState: State, mainState: S) -> S)?>> =
         mutableListOf()
 
-    private val program: Program<S> = programBuilder.build(this)
+//    private val program: Program<S> = programBuilder.build(this)
 
     fun accept(msg: Msg) {
         program.accept(msg)
@@ -41,13 +36,13 @@ class CompositeComponent<S : State>(
 
     fun run(
         initialState: S,
-        rxElmSubscriptions: RxElmSubscriptions<S>? = null,
+        sub: Sub<S>? = null,
         initialMsg: Msg = Init
     ) {
         if (components.isEmpty()) {
             throw IllegalStateException("No components defined!")
         }
-        program.run(initialState, rxElmSubscriptions, initialMsg)
+        program.run(initialState, sub, initialMsg)
     }
 
     @Suppress("UNCHECKED_CAST", "UnsafeCast")
@@ -80,13 +75,13 @@ class CompositeComponent<S : State>(
         renderer.render(state)
     }
 
-    override fun call(cmd: Cmd): Single<Msg> {
+    override fun call(cmd: Cmd): Effect {
         components.forEach { (component, _) ->
             if (component.handlesCommands(cmd)) {
                 return component.call(cmd)
             }
         }
-        return Single.just(Idle)
+        return RxEffect(Single.just(Idle)) //TODO: fix
     }
 
     @Suppress("UNCHECKED_CAST", "UnsafeCast")

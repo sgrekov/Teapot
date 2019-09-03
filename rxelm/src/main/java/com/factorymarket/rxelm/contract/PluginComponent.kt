@@ -3,7 +3,7 @@ package com.factorymarket.rxelm.contract
 import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.msg.Msg
 
-interface PluginComponent<S : State> : Component<S> {
+interface PluginComponent<S : State> : Component<S, Effect> {
 
     /**
      * Optional method.

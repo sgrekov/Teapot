@@ -1,11 +1,13 @@
 package com.factorymarket.rxelm.program
 
 import com.factorymarket.rxelm.contract.Component
+import com.factorymarket.rxelm.contract.RxComponent
 import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.log.RxElmLogger
 import io.reactivex.Scheduler
 import java.lang.IllegalArgumentException
 import com.factorymarket.rxelm.msg.ErrorMsg
+import com.factorymarket.rxelm.rx.RxCommandExecutor
 
 class ProgramBuilder {
 
@@ -36,11 +38,13 @@ class ProgramBuilder {
         return this
     }
 
-    fun <S : State> build(component: Component<S>): Program<S> {
+    fun <S : State> build(component: RxComponent<S>): Program<S> {
         if (outputScheduler == null) {
             throw IllegalArgumentException("Output Scheduler must be provided!")
         }
-
-        return Program(outputScheduler!!, logger, handleCmdErrors, component)
+        val commandExecutor = RxCommandExecutor(component, "", handleCmdErrors, outputScheduler!!, logger)
+        val program = Program(component, logger)
+        program.addCommandExecutor(commandExecutor)
+        return program
     }
 }

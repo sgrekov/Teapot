@@ -3,6 +3,7 @@ package com.factorymarket.rxelm.sample.login.presenter
 import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.contract.Component
 import com.factorymarket.rxelm.contract.Renderable
+import com.factorymarket.rxelm.contract.RxComponent
 import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.msg.Init
@@ -39,7 +40,7 @@ class LoginPresenter @Inject constructor(
     private val appPrefs: IAppPrefs,
     private val apiService: IApiService,
     private val navigator: Navigator
-) : Component<LoginState>, Renderable<LoginState> {
+) : RxComponent<LoginState>, Renderable<LoginState> {
 
     private val program: Program<LoginState> = programBuilder.build(this)
 
@@ -113,7 +114,7 @@ class LoginPresenter @Inject constructor(
         program.render()
     }
 
-    override fun call(cmd: Cmd): Single<Msg> {
+    override fun callRx(cmd: Cmd): Single<Msg> {
         return when (cmd) {
             is GetSavedUserCmd -> appPrefs.getUserSavedCredentials()
                 .map { (login, pass) -> UserCredentialsLoadedMsg(login, pass) }

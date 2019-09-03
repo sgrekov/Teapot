@@ -1,25 +1,14 @@
 package com.factorymarket.rxelm.program
 
-import com.factorymarket.rxelm.cmd.BatchCmd
-import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.cmd.None
-import com.factorymarket.rxelm.cmd.SwitchCmd
-import com.factorymarket.rxelm.contract.Component
-import com.factorymarket.rxelm.contract.Renderable
+import com.factorymarket.rxelm.cmd.*
+import com.factorymarket.rxelm.contract.*
 import com.factorymarket.rxelm.msg.Msg
-import com.factorymarket.rxelm.contract.State
-import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.log.LogType
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.sub.RxElmSubscriptions
-import com.jakewharton.rxrelay2.BehaviorRelay
-import io.reactivex.Observable
-import io.reactivex.Scheduler
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
+import com.factorymarket.rxelm.sub.Sub
 import java.util.ArrayDeque
 
 /**
@@ -59,13 +48,8 @@ import java.util.ArrayDeque
  * @param outputScheduler the scheduler to [observe on][Observable.observeOn]
  */
 class Program<S : State> internal constructor(
-        val outputScheduler: Scheduler,
-        private val logger: RxElmLogger?,
-        private val handleCmdErrors: Boolean,
-        private val component: Component<S>
-) : MessageConsumer {
-
-    private val messageRelay: BehaviorRelay<Msg> = BehaviorRelay.create()
+        private val component: Component<S, out Effect>,
+        private val logger: RxElmLogger?) : MessageConsumer {
 
     /** Here messages are kept until they can be passed to messageRelay */
     private var messageQueue = ArrayDeque<Msg>()
@@ -73,79 +57,72 @@ class Program<S : State> internal constructor(
     /** State at this moment */
     private lateinit var state: S
 
-    private lateinit var commandExecutor : RxCommandExecutor<S>
+    private lateinit var commandExecutor: CommandExecutor<S>
 
     private var lock: Boolean = false
     private var isRendering: Boolean = false
-    private var rxElmSubscriptions: RxElmSubscriptions<S>? = null
-    private var disposables: CompositeDisposable = CompositeDisposable()
+    private var sub: Sub<S>? = null
 
-    fun run(initialState: S, rxElmSubscriptions: RxElmSubscriptions<S>? = null, initialMsg: Msg = Init) {
-        init(initialState, rxElmSubscriptions)
+    fun run(initialState: S, sub: Sub<S>? = null, initialMsg: Msg = Init) {
+        init(initialState, sub)
 
         accept(initialMsg)
     }
 
-    fun run(initialState: S, rxElmSubscriptions: RxElmSubscriptions<S>? = null, initialMsgs: List<Msg>) {
-        init(initialState, rxElmSubscriptions)
+    fun run(initialState: S, sub: Sub<S>? = null, initialMsgs: List<Msg>) {
+        init(initialState, sub)
 
         initialMsgs.forEach {
             accept(it)
         }
     }
 
-    private fun init(initialState: S, rxElmSubscriptions: RxElmSubscriptions<S>?) {
+    private fun init(initialState: S, sub: Sub<S>?) {
         this.state = initialState
-        this.rxElmSubscriptions = rxElmSubscriptions
-        this.commandExecutor = RxCommandExecutor(component, this, state.javaClass.simpleName, handleCmdErrors, outputScheduler, logger)
-
-        val loopDisposable = createLoop(component, logger)
-
-        disposables.add(loopDisposable)
+        this.sub = sub
     }
 
-    fun createLoop(component: Component<S>, logger: RxElmLogger?): Disposable {
-        return messageRelay
-                .observeOn(outputScheduler)
-                .map { msg ->
+    fun runCycle() {
+        if (messageQueue.isEmpty()) {
+            return
+        }
 
-                    val update = update(msg, component, logger)
-                    val command = update.cmds
-                    val newState = update.updatedState ?: state
+        val msg = messageQueue.first
+        val update = update(msg, component, logger)
+        val command = update.cmds
+        val newState = update.updatedState ?: state
 
-                    if (newState !== this.state) {
-                        isRendering = true
-                        if (component is Renderable<*>) {
-                            (component as Renderable<S>).render(newState)
-                        }
-                        isRendering = false
+        if (newState !== this.state) {
+            isRendering = true
+            if (component is Renderable<*>) {
+                (component as Renderable<S>).render(newState)
+            }
+            isRendering = false
+        }
+
+        state = newState
+        lock = false
+
+        sub?.subscribe(newState)
+
+        if (command !== None) {
+            if (command is BatchCmd) {
+                command.cmds.forEach { innerCmd ->
+                    if (innerCmd !is None) {
+                        commandExecutor.executeCmd(innerCmd)
                     }
-
-                    this.state = newState
-                    lock = false
-
-                    this.rxElmSubscriptions?.subscribe(this, newState)
-
-                    pickNextMessageFromQueue()
-
-                    return@map command
                 }
-                .filter { cmd -> cmd !== None }
-                .subscribe { cmd ->
-                    if (cmd is BatchCmd) {
-                        cmd.cmds.filter { it !is None }.forEach { innerCmd ->
-                            commandExecutor.executeCmd(innerCmd)
-                        }
-                    } else {
-                        commandExecutor.executeCmd(cmd)
-                    }
+            } else {
+                commandExecutor.executeCmd(command)
+            }
+        }
 
-                }
+        pickNextMessageFromQueue()
     }
 
     fun isRendering(): Boolean = isRendering
 
-    private fun update(msg: Msg, component: Component<S>, logger: RxElmLogger?): Update<S> {
+    private fun update(msg: Msg, component: Component<S, out Effect>, logger: RxElmLogger?): Update<S> {
         logUpdate(logger, msg)
 
         val updateResult = component.update(msg, this.state)
@@ -167,7 +144,7 @@ class Program<S : State> internal constructor(
 
         if (!lock && messageQueue.size > 0) {
             lock = true
-            messageRelay.accept(messageQueue.first)
+            runCycle()
         }
     }
 
@@ -194,7 +171,7 @@ class Program<S : State> internal constructor(
         }
         if (!lock && messageQueue.size == 1) {
             lock = true
-            messageRelay.accept(messageQueue.first)
+            runCycle()
         }
     }
 
@@ -211,16 +188,14 @@ class Program<S : State> internal constructor(
         } else null
     }
 
-    fun addEventObservable(eventSource: Observable<Msg>): Disposable {
-        return eventSource.subscribe { msg -> accept(msg) }
+    fun stop() {
+        commandExecutor.stop()
+        sub?.dispose()
     }
 
-    fun stop() {
-        if (!disposables.isDisposed) {
-            disposables.dispose()
-        }
-        commandExecutor.stop()
-        rxElmSubscriptions?.dispose()
+    fun addCommandExecutor(ce: CommandExecutor<S>) {
+        ce.addMessageConsumer(this)
+        commandExecutor = ce
     }
 
 }

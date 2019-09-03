@@ -3,13 +3,14 @@ package com.factorymarket.rxelm.test
 import com.factorymarket.rxelm.cmd.BatchCmd
 import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.contract.Component
+import com.factorymarket.rxelm.contract.Effect
 import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.msg.Msg
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 
 
-class RxElmSpec<S : State> constructor(val component: Component<S>) {
+class RxElmSpec<S : State> constructor(val component: Component<S, Effect>) {
 
     private lateinit var state: S
     private var prevState: S? = null

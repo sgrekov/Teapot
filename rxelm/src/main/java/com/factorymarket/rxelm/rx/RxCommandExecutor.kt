@@ -1,14 +1,12 @@
-package com.factorymarket.rxelm.program
+package com.factorymarket.rxelm.rx
 
-import com.factorymarket.rxelm.cmd.CancelByClassCmd
-import com.factorymarket.rxelm.cmd.CancelCmd
-import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.cmd.SwitchCmd
-import com.factorymarket.rxelm.contract.Component
+import com.factorymarket.rxelm.cmd.*
+import com.factorymarket.rxelm.contract.RxComponent
 import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.msg.Msg
+import com.factorymarket.rxelm.program.MessageConsumer
 import com.jakewharton.rxrelay2.BehaviorRelay
 import com.jakewharton.rxrelay2.Relay
 import io.reactivex.Observable
@@ -17,22 +15,22 @@ import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import java.util.TreeMap
+import java.util.*
 import kotlin.collections.HashMap
 
 class RxCommandExecutor<S : State>(
-        private val component: Component<S>,
-        private val messageConsumer: MessageConsumer,
+        private val component: RxComponent<S>,
         private val logTag : String,
         private val handleCmdErrors: Boolean,
         private val outputScheduler: Scheduler,
-        private val logger: RxElmLogger?) {
+        private val logger: RxElmLogger?) : CommandExecutor<S> {
 
     private val commandsDisposablesMap: MutableMap<Int, MutableMap<Int, Disposable>> = TreeMap()
     private val switchRelayHolder: HashMap<String, Relay<SwitchCmd>> = HashMap()
     private var disposables: CompositeDisposable = CompositeDisposable()
+    lateinit var messageConsumer : MessageConsumer
 
-    fun executeCmd(cmd: Cmd) {
+    override fun executeCmd(cmd: Cmd) {
         when (cmd) {
             is SwitchCmd -> {
                 val relay = getSwitchRelay(cmd)
@@ -101,8 +99,7 @@ class RxCommandExecutor<S : State>(
     }
 
     private fun logCmd(message: String) {
-        logger?.takeIf { it.logType().needToShowCommands() }
-                ?.log(logTag, message)
+        logger?.takeIf { it.logType().needToShowCommands() }?.log(logTag, message)
     }
 
     private fun subscribeSwitchRelay(relay: BehaviorRelay<SwitchCmd>) {
@@ -120,19 +117,19 @@ class RxCommandExecutor<S : State>(
     private fun cmdCall(cmd: Cmd): Observable<Msg> {
 
         return if (handleCmdErrors) {
-            component.call(cmd)
+            component.call(cmd).toSingle()
                     .onErrorResumeNext { err ->
                         logger?.takeIf { it.logType().needToShowCommands() }?.error(logTag, err)
                         Single.just(ErrorMsg(err, cmd))
                     }
                     .toObservable()
         } else {
-            component.call(cmd)
+            component.call(cmd).toSingle()
                     .toObservable()
         }
     }
 
-    fun stop() {
+    override fun stop() {
         commandsDisposablesMap.values.forEach {
             it.values.forEach { disposable ->
                 if (!disposable.isDisposed) {
@@ -140,6 +137,10 @@ class RxCommandExecutor<S : State>(
                 }
             }
         }
+    }
+
+    override fun addMessageConsumer(mc: MessageConsumer) {
+        messageConsumer = mc
     }
 
 }

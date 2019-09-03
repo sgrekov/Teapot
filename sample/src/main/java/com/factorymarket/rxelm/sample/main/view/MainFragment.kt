@@ -21,11 +21,11 @@ import javax.inject.Inject
 class MainFragment : BaseFragment(), IMainView {
 
     @Inject lateinit var presenter: MainPresenter
-    @BindView(R.id.repos_list) lateinit var reposList: RecyclerView
-    @BindView(R.id.repos_progress) lateinit var progressBar: ProgressBar
-    @BindView(R.id.error_text) lateinit var errorText: TextView
-    @BindView(R.id.refresh) lateinit var refreshBtn: Button
-    @BindView(R.id.cancel) lateinit var cancelBtn: Button
+    @JvmField @BindView(R.id.repos_list) var reposList: RecyclerView? = null
+    @JvmField @BindView(R.id.repos_progress) var progressBar: ProgressBar? = null
+    @JvmField @BindView(R.id.error_text) var errorText: TextView? = null
+    @JvmField @BindView(R.id.refresh) var refreshBtn: Button? = null
+    @JvmField @BindView(R.id.cancel) var cancelBtn: Button? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,13 +42,13 @@ class MainFragment : BaseFragment(), IMainView {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        reposList.layoutManager = LinearLayoutManager(activity)
+        reposList?.layoutManager = LinearLayoutManager(activity)
 
-        refreshBtn.setOnClickListener {
+        refreshBtn?.setOnClickListener {
             presenter.refresh()
         }
 
-        cancelBtn.setOnClickListener {
+        cancelBtn?.setOnClickListener {
             presenter.cancel()
         }
 
@@ -65,23 +65,23 @@ class MainFragment : BaseFragment(), IMainView {
     }
 
     override fun showProgress() {
-        progressBar.visibility = View.VISIBLE
+        progressBar?.visibility = View.VISIBLE
     }
 
     override fun hideProgress() {
-        progressBar.visibility = View.GONE
+        progressBar?.visibility = View.GONE
     }
 
     override fun setErrorText(errorText: String) {
-        this.errorText.text = errorText
+        this.errorText?.text = errorText
     }
 
     override fun showErrorText(show : Boolean) {
-        errorText.visibility = if (show) View.VISIBLE else View.GONE
+        errorText?.visibility = if (show) View.VISIBLE else View.GONE
     }
 
     override fun setRepos(reposList: List<Repository>) {
-        this.reposList.adapter = ReposAdapter(reposList, layoutInflater)
+        this.reposList?.adapter = ReposAdapter(reposList, layoutInflater)
     }
 
     private inner class ReposAdapter(private val repos: List<Repository>, private val inflater: LayoutInflater) :

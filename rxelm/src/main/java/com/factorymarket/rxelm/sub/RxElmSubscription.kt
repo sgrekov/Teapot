@@ -2,8 +2,10 @@ package com.factorymarket.rxelm.sub
 
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.contract.State
+import com.factorymarket.rxelm.program.MessageConsumer
 import com.factorymarket.rxelm.program.Program
 import io.reactivex.Observable
+import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
 import java.util.LinkedList
 import java.util.Queue
@@ -18,11 +20,12 @@ import java.util.Queue
  * make all unconditional subscriptions and suitable conditional subscriptions to subscribe
  * and pass their return to [Program.accept]
  */
-class RxElmSubscriptions<S : State> {
+class RxElmSubscriptions<S : State>(private val outputScheduler : Scheduler) : Sub<S> {
 
     private val subs: Queue<Observable<out Msg>> = LinkedList()
     private val conditionalSubs: Queue<Pair<(S) -> Boolean, Observable<out Msg>>> = LinkedList()
     private val compositeDisposable: CompositeDisposable = CompositeDisposable()
+    private var messageConsumer : MessageConsumer? = null
 
     /**
      * Adds <[Msg]> observable to collection which result will be passed
@@ -44,6 +47,10 @@ class RxElmSubscriptions<S : State> {
         return this
     }
 
+    override fun setMessageConsumer(mc: MessageConsumer) {
+        this.messageConsumer = mc
+    }
+
     /**
      * Subscribe all data sources to [Program.accept(Message)][Program.accept]
      *
@@ -52,7 +59,7 @@ class RxElmSubscriptions<S : State> {
      *
      * If it is, subscribes them if not - just delete.
      */
-    fun subscribe(program: Program<S>, state: S) {
+    override fun subscribe(state: S) {
         moveConditionalSubsToSubsIfTheyMatchPredicate(state)
 
         if (subs.isEmpty()) {
@@ -61,9 +68,9 @@ class RxElmSubscriptions<S : State> {
         var sub = subs.poll()
         while (sub != null) {
             val disposable = sub
-                .observeOn(program.outputScheduler)
+                .observeOn(outputScheduler)
                 .subscribe { msg ->
-                    program.accept(msg)
+                    messageConsumer?.accept(msg)
                 }
             compositeDisposable.add(disposable)
             sub = subs.poll()
@@ -73,7 +80,7 @@ class RxElmSubscriptions<S : State> {
     /**
      * Dispose all subscriptions
      */
-    fun dispose() {
+    override fun dispose() {
         if (!compositeDisposable.isDisposed) {
             compositeDisposable.dispose()
         }

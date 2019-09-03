@@ -2,7 +2,9 @@ package com.factorymarket.rxelm.components.cachedentity
 
 import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.None
+import com.factorymarket.rxelm.contract.Effect
 import com.factorymarket.rxelm.contract.PluginComponent
+import com.factorymarket.rxelm.contract.RxEffect
 import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.Msg
 import io.reactivex.Single
@@ -20,8 +22,12 @@ class CachedEntityComponent<T, FETCH_PARAMS>(
 
     override fun initialState(): CachedEntityState<T, FETCH_PARAMS> = CachedEntityState.initial(params)
 
+    override fun call(cmd: Cmd): Effect {
+        return RxEffect(rxEffect(cmd))
+    }
+
     @Suppress("UnsafeCast")
-    override fun call(cmd: Cmd): Single<Msg> {
+    fun rxEffect(cmd: Cmd): Single<Msg> {
         return when (val cached = cmd as CachedEntityCmd) {
             is LoadFromCacheCmd<*> -> commandHandler.retrieveFromCache(cached.params as FETCH_PARAMS)
                 .map { EntityLoadedFromCacheMsg(it) as Msg }

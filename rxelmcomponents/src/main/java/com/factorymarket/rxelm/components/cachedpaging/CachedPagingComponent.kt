@@ -5,7 +5,9 @@ import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.None
 import com.factorymarket.rxelm.components.paging.ErrorLogger
 import com.factorymarket.rxelm.components.paging.LogThrowableCmd
+import com.factorymarket.rxelm.contract.Effect
 import com.factorymarket.rxelm.contract.PluginComponent
+import com.factorymarket.rxelm.contract.RxEffect
 import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.statelessEffect
@@ -183,8 +185,12 @@ class CachedPagingComponent<T, FETCH_PARAMS>(
         }.copy(isCacheLoading = false, isNoMoreCache = isNoMoreCache, items = items))
     }
 
+    override fun call(cmd: Cmd): Effect {
+        return RxEffect(rxEffect(cmd))
+    }
+
     @Suppress("UnsafeCast")
-    override fun call(cmd: Cmd): Single<Msg> = when (cmd) {
+    fun rxEffect(cmd: Cmd): Single<Msg> = when (cmd) {
         is CachedPagingLoadItemsFromCacheCmd<*> -> cmdHandlerPaging.getCachedItems(
             cmd.limit,
             cmd.params as FETCH_PARAMS
