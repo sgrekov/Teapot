@@ -59,10 +59,10 @@ class CoroutinesCommandExecutor<S : State>(
         val cmdJob = GlobalScope.launch(Dispatchers.Main) {
             if (handleCmdErrors) {
                 try {
-                    val msg = withContext(cmdDispatcher) {
+                    val msg = GlobalScope.async(cmdDispatcher) {
                         component.callCoroutine(cmd)
                     }
-                    messageConsumer.accept(msg)
+                    messageConsumer.accept(msg.await())
                 } catch (e: Exception) {
                     messageConsumer.accept(ErrorMsg(e, cmd))
                 }
