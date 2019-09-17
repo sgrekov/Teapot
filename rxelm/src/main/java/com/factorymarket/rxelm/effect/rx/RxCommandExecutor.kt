@@ -1,4 +1,4 @@
-package com.factorymarket.rxelm.rx
+package com.factorymarket.rxelm.effect.rx
 
 import com.factorymarket.rxelm.cmd.*
 import com.factorymarket.rxelm.contract.RxComponent
@@ -25,6 +25,10 @@ class RxCommandExecutor<S : State>(
         private val outputScheduler: Scheduler,
         private val logger: RxElmLogger?) : CommandExecutor<S> {
 
+    /**
+     * Since we can cancel commands by their class, we hold commands in map bags by the hashcode
+     * of the class.
+     */
     private val commandsDisposablesMap: MutableMap<Int, MutableMap<Int, Disposable>> = TreeMap()
     private val switchRelayHolder: HashMap<String, Relay<SwitchCmd>> = HashMap()
     private var disposables: CompositeDisposable = CompositeDisposable()
@@ -37,7 +41,7 @@ class RxCommandExecutor<S : State>(
                 relay.accept(cmd)
             }
             is CancelCmd -> {
-                val commandDisposablesMap = commandsDisposablesMap[cmd.cancelCmd.hashCode()]
+                val commandDisposablesMap = commandsDisposablesMap[cmd.cancelCmd::class.hashCode()]
                         ?: return
 
                 val commandDisposables = commandDisposablesMap[cmd.cancelCmd.hashCode()]

@@ -1,13 +1,16 @@
 package com.factorymarket.rxelm.program
 
 import com.factorymarket.rxelm.contract.Component
+import com.factorymarket.rxelm.contract.CoroutineComponent
 import com.factorymarket.rxelm.contract.RxComponent
 import com.factorymarket.rxelm.contract.State
+import com.factorymarket.rxelm.effect.coroutine.CoroutinesCommandExecutor
 import com.factorymarket.rxelm.log.RxElmLogger
 import io.reactivex.Scheduler
 import java.lang.IllegalArgumentException
 import com.factorymarket.rxelm.msg.ErrorMsg
-import com.factorymarket.rxelm.rx.RxCommandExecutor
+import com.factorymarket.rxelm.effect.rx.RxCommandExecutor
+import kotlinx.coroutines.Dispatchers
 
 class ProgramBuilder {
 
@@ -43,6 +46,16 @@ class ProgramBuilder {
             throw IllegalArgumentException("Output Scheduler must be provided!")
         }
         val commandExecutor = RxCommandExecutor(component, "", handleCmdErrors, outputScheduler!!, logger)
+        val program = Program(component, logger)
+        program.addCommandExecutor(commandExecutor)
+        return program
+    }
+
+    fun <S : State> build(component: CoroutineComponent<S>): Program<S> {
+        if (outputScheduler == null) {
+            throw IllegalArgumentException("Output Scheduler must be provided!")
+        }
+        val commandExecutor = CoroutinesCommandExecutor(component, Dispatchers.Main, "", handleCmdErrors, logger)
         val program = Program(component, logger)
         program.addCommandExecutor(commandExecutor)
         return program

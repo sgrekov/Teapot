@@ -7,6 +7,7 @@ import org.eclipse.egit.github.core.Repository
 
 data class MainState(
     val isLoading: Boolean = true,
+    val isCanceled : Boolean = false,
     val userName: String,
     val reposList: List<Repository> = listOf()
 ) : State()

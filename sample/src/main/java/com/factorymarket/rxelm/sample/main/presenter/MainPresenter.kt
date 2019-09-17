@@ -3,34 +3,29 @@ package com.factorymarket.rxelm.sample.main.presenter
 
 import com.factorymarket.rxelm.cmd.CancelByClassCmd
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.contract.Component
+import com.factorymarket.rxelm.contract.CoroutineComponent
 import com.factorymarket.rxelm.contract.Renderable
-import com.factorymarket.rxelm.contract.RxComponent
 import com.factorymarket.rxelm.contract.Update
+import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.program.Program
 import com.factorymarket.rxelm.program.ProgramBuilder
 import com.factorymarket.rxelm.sample.data.IApiService
-import com.factorymarket.rxelm.sample.main.model.CancelMsg
-import com.factorymarket.rxelm.sample.main.model.LoadReposCmd
-import com.factorymarket.rxelm.sample.main.model.MainState
-import com.factorymarket.rxelm.sample.main.model.RefreshMsg
-import com.factorymarket.rxelm.sample.main.model.ReposLoadedMsg
+import com.factorymarket.rxelm.sample.main.model.*
 import com.factorymarket.rxelm.sample.main.view.IMainView
 import com.factorymarket.rxelm.sample.navigation.Navigator
-import io.reactivex.Single
 import org.eclipse.egit.github.core.Repository
-import java.util.concurrent.TimeUnit
+import timber.log.Timber
 import javax.inject.Inject
 
 class MainPresenter @Inject constructor(
-    val view: IMainView,
-    programBuilder: ProgramBuilder,
-    private val service: IApiService,
-    private val navigator: Navigator
-) : RxComponent<MainState>, Renderable<MainState> {
+        val view: IMainView,
+        programBuilder: ProgramBuilder,
+        private val service: IApiService,
+        private val navigator: Navigator
+) : CoroutineComponent<MainState>, Renderable<MainState> {
 
     private val program: Program<MainState> = programBuilder.build(this)
 
@@ -43,7 +38,14 @@ class MainPresenter @Inject constructor(
             is Init -> Update.update(state.copy(isLoading = true), LoadReposCmd(state.userName))
             is ReposLoadedMsg -> Update.state(state.copy(isLoading = false, reposList = msg.reposList))
             is CancelMsg -> Update.update(state.copy(isLoading = false), CancelByClassCmd(cmdClass = LoadReposCmd::class))
-            is RefreshMsg -> Update.update(state.copy(isLoading = true, reposList = listOf()), LoadReposCmd(state.userName))
+            is RefreshMsg -> Update.update(state.copy(isLoading = true, isCanceled = false, reposList = listOf()), LoadReposCmd(state.userName))
+            is ErrorMsg -> {
+                Timber.e(msg.err)
+                when (msg.cmd) {
+                    is LoadReposCmd -> Update.state(state.copy(isCanceled = true))
+                    else -> Update.idle()
+                }
+            }
             else -> Update.idle()
         }
     }
@@ -60,7 +62,7 @@ class MainPresenter @Inject constructor(
             } else {
                 view.hideProgress()
                 if (reposList.isEmpty()) {
-                    view.setErrorText("User has no starred repos")
+                    view.setErrorText(if (state.isCanceled) "Request is canceled" else "User has no starred repos")
                     view.showErrorText(true)
                 }
             }
@@ -72,11 +74,10 @@ class MainPresenter @Inject constructor(
         program.render()
     }
 
-    override fun callRx(cmd: Cmd): Single<Msg> {
+    override suspend fun callCoroutine(cmd: Cmd): Msg {
         return when (cmd) {
-            is LoadReposCmd -> service.getStarredRepos(cmd.userName).delay(1,TimeUnit.SECONDS)
-                .map { repos -> ReposLoadedMsg(repos) }
-            else -> Single.just(Idle)
+            is LoadReposCmd -> ReposLoadedMsg(service.getStarredRepos2(cmd.userName))
+            else -> Idle
         }
     }
 

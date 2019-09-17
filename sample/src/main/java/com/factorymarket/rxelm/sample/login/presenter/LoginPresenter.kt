@@ -1,10 +1,7 @@
 package com.factorymarket.rxelm.sample.login.presenter
 
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.contract.Component
-import com.factorymarket.rxelm.contract.Renderable
-import com.factorymarket.rxelm.contract.RxComponent
-import com.factorymarket.rxelm.contract.Update
+import com.factorymarket.rxelm.contract.*
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.msg.Msg
@@ -32,15 +29,16 @@ import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.disposables.Disposable
 import org.eclipse.egit.github.core.client.RequestException
+import timber.log.Timber
 import javax.inject.Inject
 
 class LoginPresenter @Inject constructor(
-    private val loginView: ILoginView,
-    programBuilder: ProgramBuilder,
-    private val appPrefs: IAppPrefs,
-    private val apiService: IApiService,
-    private val navigator: Navigator
-) : RxComponent<LoginState>, Renderable<LoginState> {
+        private val loginView: ILoginView,
+        programBuilder: ProgramBuilder,
+        private val appPrefs: IAppPrefs,
+        private val apiService: IApiService,
+        private val navigator: Navigator
+) : CoroutineComponent<LoginState>, Renderable<LoginState> {
 
     private val program: Program<LoginState> = programBuilder.build(this)
 
@@ -54,25 +52,25 @@ class LoginPresenter @Inject constructor(
             is UserCredentialsLoadedMsg ->
                 Update.update(state.copy(login = msg.login, pass = msg.pass), LoginCmd(msg.login, msg.pass))
             is LoginResponseMsg -> Update.effect(
-                if (state.saveUser) {
-                    SaveUserCredentialsCmd(state.login, state.pass)
-                } else {
-                    GoToMainCmd
-                }
+                    if (state.saveUser) {
+                        SaveUserCredentialsCmd(state.login, state.pass)
+                    } else {
+                        GoToMainCmd
+                    }
             )
             is UserCredentialsSavedMsg -> Update.effect(GoToMainCmd)
             is IsSaveCredentialsMsg -> Update.state(state.copy(saveUser = msg.checked))
             is LoginInputMsg ->
                 Update.state(
-                    if (!validateLogin(msg.login)) {
-                        state.copy(login = msg.login, btnEnabled = false)
-                    } else state.copy(login = msg.login, loginError = null, btnEnabled = validatePass(state.pass))
+                        if (!validateLogin(msg.login)) {
+                            state.copy(login = msg.login, btnEnabled = false)
+                        } else state.copy(login = msg.login, loginError = null, btnEnabled = validatePass(state.pass))
                 )
             is PassInputMsg ->
                 Update.state(
-                    if (!validatePass(msg.pass)) {
-                        state.copy(pass = msg.pass, btnEnabled = false)
-                    } else state.copy(pass = msg.pass, btnEnabled = validateLogin(state.login))
+                        if (!validatePass(msg.pass)) {
+                            state.copy(pass = msg.pass, btnEnabled = false)
+                        } else state.copy(pass = msg.pass, btnEnabled = validateLogin(state.login))
                 )
             is LoginClickMsg -> {
                 if (checkLogin(state.login)) {
@@ -84,6 +82,7 @@ class LoginPresenter @Inject constructor(
                 Update.update(state.copy(isLoading = true, error = null), LoginCmd(state.login, state.pass))
             }
             is ErrorMsg -> {
+                Timber.e(msg.err)
                 val newState = when (msg.cmd) {
                     is GetSavedUserCmd -> state.copy(isLoading = false)
                     is LoginCmd -> {
@@ -114,20 +113,25 @@ class LoginPresenter @Inject constructor(
         program.render()
     }
 
-    override fun callRx(cmd: Cmd): Single<Msg> {
+    override suspend fun callCoroutine(cmd: Cmd): Msg {
         return when (cmd) {
-            is GetSavedUserCmd -> appPrefs.getUserSavedCredentials()
-                .map { (login, pass) -> UserCredentialsLoadedMsg(login, pass) }
-            is SaveUserCredentialsCmd -> appPrefs.saveUserSavedCredentials(cmd.login, cmd.pass)
-                .map { _ -> UserCredentialsSavedMsg() }
-            is LoginCmd -> apiService.login(cmd.login, cmd.pass)
-                .map { logged -> LoginResponseMsg(logged) }
-            is GoToMainCmd -> {
-                inView {
-                    navigator.goToMainScreen()
-                }
+            is GetSavedUserCmd -> {
+                val (login, pass) = appPrefs.getUserSavedCredentials2()
+                UserCredentialsLoadedMsg(login, pass)
             }
-            else -> Single.just(Idle)
+            is SaveUserCredentialsCmd -> {
+                appPrefs.saveUserSavedCredentials2(cmd.login, cmd.pass)
+                UserCredentialsSavedMsg()
+            }
+            is LoginCmd -> {
+                val logged = apiService.login2(cmd.login, cmd.pass)
+                LoginResponseMsg(logged)
+            }
+            is GoToMainCmd -> {
+                navigator.goToMainScreen()
+                Idle
+            }
+            else -> Idle
         }
     }
 

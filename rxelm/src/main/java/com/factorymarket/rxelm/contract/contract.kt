@@ -4,6 +4,10 @@ import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.None
 import com.factorymarket.rxelm.msg.Msg
 import io.reactivex.Single
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 
 /**
  * Base class representing some state.
@@ -28,6 +32,8 @@ interface Component<S : State, E : Effect> {
     fun call(cmd: Cmd): E
 }
 
+abstract class Effect
+
 interface RxComponent<S : State> : Component<S, RxEffect> {
 
     abstract fun callRx(cmd: Cmd): Single<Msg>
@@ -37,12 +43,27 @@ interface RxComponent<S : State> : Component<S, RxEffect> {
     }
 }
 
-abstract class Effect
+class RxEffect(val rx: Single<Msg>) : Effect() {
 
-class RxEffect(val rx : Single<Msg>) : Effect() {
-
-    fun toSingle() : Single<Msg> {
+    fun toSingle(): Single<Msg> {
         return rx
+    }
+}
+
+class CoEffect(private val defferedEffect: Deferred<Msg>) : Effect() {
+
+    suspend fun execute(): Msg {
+        return defferedEffect.await()
+    }
+}
+
+interface CoroutineComponent<S : State> : Component<S, CoEffect> {
+
+    suspend fun callCoroutine(cmd: Cmd): Msg
+
+    override fun call(cmd: Cmd): CoEffect {
+        val coroutineScope = CoroutineScope(Dispatchers.IO)
+        return CoEffect(coroutineScope.async { callCoroutine(cmd) })
     }
 }
 

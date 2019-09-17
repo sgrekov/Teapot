@@ -1,10 +1,7 @@
 package com.factorymarket.rxelm.sample.repo.presenter
 
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.contract.Component
-import com.factorymarket.rxelm.contract.Renderable
-import com.factorymarket.rxelm.contract.RxComponent
-import com.factorymarket.rxelm.contract.Update
+import com.factorymarket.rxelm.contract.*
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.program.Program
@@ -25,7 +22,7 @@ class RepoPresenter @Inject constructor(
         @Named("repo_id") private val repoId: String,
         programBuilder: ProgramBuilder,
         private val apiService: IApiService
-) : RxComponent<RepoState>, Renderable<RepoState> {
+) : CoroutineComponent<RepoState>, Renderable<RepoState> {
 
     override fun render(state: RepoState) {
         view.showLoading(state.isLoading)
@@ -42,10 +39,10 @@ class RepoPresenter @Inject constructor(
         return RepoState(openRepoId = repoId, isLoading = true)
     }
 
-    override fun callRx(cmd: Cmd): Single<Msg> {
+    override suspend fun callCoroutine(cmd: Cmd): Msg {
         return when (cmd) {
-            is LoadRepo -> apiService.getRepo(RepositoryId.createFromUrl(cmd.id)).map { RepoLoaded(it) }
-            else -> Single.just(Idle)
+            is LoadRepo -> RepoLoaded(apiService.getRepo2(RepositoryId.createFromUrl(cmd.id)))
+            else -> Idle
         }
     }
 
