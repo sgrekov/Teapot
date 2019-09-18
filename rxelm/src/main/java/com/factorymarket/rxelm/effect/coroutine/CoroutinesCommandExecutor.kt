@@ -5,6 +5,7 @@ import com.factorymarket.rxelm.contract.CoroutineComponent
 import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.msg.ErrorMsg
+import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.program.MessageConsumer
 import kotlinx.coroutines.*
 import java.util.*
@@ -17,7 +18,7 @@ class CoroutinesCommandExecutor<S : State>(
         private val logger: RxElmLogger?) : CommandExecutor<S> {
 
     lateinit var messageConsumer: MessageConsumer
-    private val parentJob = Job()
+    private val parentJob = SupervisorJob()
     private val executorScope = CoroutineScope(parentJob)
     /**
      * Since we can cancel commands by their class, we hold commands in map bags by the hashcode
@@ -44,6 +45,7 @@ class CoroutinesCommandExecutor<S : State>(
 
                 jobBag.values.forEach { job ->
                     if (job.isActive && !job.isCompleted) {
+                        logCmd("elm cancel cmd:${cmd.cmdClass}")
                         job.cancel()
                     }
                 }
@@ -54,26 +56,28 @@ class CoroutinesCommandExecutor<S : State>(
 
     private fun handleCmd(cmd: Cmd) {
         val cmdDispatcher = if (cmd is ViewCmd) outputDispatcher else Dispatchers.IO
-        val cmdScope = CoroutineScope(cmdDispatcher)
 
-        val cmdJob = GlobalScope.launch(Dispatchers.Main) {
-            if (handleCmdErrors) {
+        val cmdJob = executorScope.launch(Dispatchers.Main) {
+            val msg = if (handleCmdErrors) {
                 try {
-                    val msg = GlobalScope.async(cmdDispatcher) {
-                        component.callCoroutine(cmd)
-                    }
-                    messageConsumer.accept(msg.await())
+                    callComponent(cmdDispatcher, cmd)
                 } catch (e: Exception) {
-                    messageConsumer.accept(ErrorMsg(e, cmd))
+                    ErrorMsg(e, cmd)
                 }
             } else {
-                val msg = GlobalScope.async(cmdDispatcher) {
-                    component.callCoroutine(cmd)
-                }
-                messageConsumer.accept(msg.await())
+                callComponent(cmdDispatcher, cmd)
+            }
+            withContext(Dispatchers.Main) {
+                messageConsumer.accept(msg)
             }
         }
         saveJob(cmd, cmdJob)
+    }
+
+    private suspend fun callComponent(cmdDispatcher: CoroutineDispatcher, cmd: Cmd): Msg {
+        return withContext(cmdDispatcher) {
+            component.callCoroutine(cmd)
+        }
     }
 
     private fun saveJob(cmd: Cmd, cmdJob: Job) {

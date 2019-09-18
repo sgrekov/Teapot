@@ -37,14 +37,11 @@ class MainPresenter @Inject constructor(
         return when (msg) {
             is Init -> Update.update(state.copy(isLoading = true), LoadReposCmd(state.userName))
             is ReposLoadedMsg -> Update.state(state.copy(isLoading = false, reposList = msg.reposList))
-            is CancelMsg -> Update.update(state.copy(isLoading = false), CancelByClassCmd(cmdClass = LoadReposCmd::class))
+            is CancelMsg -> Update.update(state.copy(isLoading = false, isCanceled = true), CancelByClassCmd(cmdClass = LoadReposCmd::class))
             is RefreshMsg -> Update.update(state.copy(isLoading = true, isCanceled = false, reposList = listOf()), LoadReposCmd(state.userName))
             is ErrorMsg -> {
                 Timber.e(msg.err)
-                when (msg.cmd) {
-                    is LoadReposCmd -> Update.state(state.copy(isCanceled = true))
-                    else -> Update.idle()
-                }
+                Update.idle()
             }
             else -> Update.idle()
         }

@@ -55,6 +55,7 @@ class RxCommandExecutor<S : State>(
                         ?: return
                 commandDisposablesMap.values.forEach { disposable ->
                     if (!disposable.isDisposed) {
+                        logCmd("elm cancel cmd:${cmd.cmdClass}")
                         disposable.dispose()
                     }
                 }
