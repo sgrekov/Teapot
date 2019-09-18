@@ -13,7 +13,7 @@ interface RepoService {
     suspend fun login2(login: String, pass: String): Boolean
 
     fun getStarredRepos(userName: String): Single<List<Repository>>
-    suspend fun getStarredRepos2(userName: String, page : Int): PagingResult<Repository>
+    suspend fun getStarredRepos2(userName: String?, page : Int): PagingResult<Repository>
     fun getRepo(id: RepositoryId): Single<Repository>
     suspend fun getRepo2(id: RepositoryId): Repository
 }

@@ -55,7 +55,7 @@ class CoPagingFeature<T, FETCH_PARAMS>(
     override suspend fun call(cmd: Cmd): Msg = when (cmd) {
         is PagingLoadItemsCmd<*> -> {
             try {
-                val result = cmdHandlerPaging.fetchPage(cmd.page, cmd.params as FETCH_PARAMS)
+                val result = cmdHandlerPaging.fetchPage(cmd.page, cmd.params as? FETCH_PARAMS)
 
                 PagingOnLoadedItemsMsg(
                         result.items,
@@ -69,7 +69,7 @@ class CoPagingFeature<T, FETCH_PARAMS>(
 
         is PagingRefreshItemsCmd<*> -> {
             try {
-                val result = cmdHandlerPaging.fetchPage(1, cmd.params as FETCH_PARAMS)
+                val result = cmdHandlerPaging.fetchPage(1, cmd.params as? FETCH_PARAMS)
 
                 PagingOnRefreshedItemsMsg(
                         result.items,
@@ -92,7 +92,7 @@ class CoPagingFeature<T, FETCH_PARAMS>(
 
 
 abstract class PagingFeature<T, FETCH_PARAMS>(
-        protected val fetchParams: FETCH_PARAMS,
+        protected val fetchParams: FETCH_PARAMS?,
         protected val errorLogger: ErrorLogger? = null,
         protected val namespace: String = ""
 ) : PluginUpdate<PagingState<T, FETCH_PARAMS>> {
@@ -113,9 +113,9 @@ abstract class PagingFeature<T, FETCH_PARAMS>(
     @Suppress("UnsafeCast", "UNCHECKED_CAST")
     override fun update(msg: Msg, state: PagingState<T, FETCH_PARAMS>): Update<PagingState<T, FETCH_PARAMS>> =
             when (msg) {
-                is PagingStartMsg -> startPaging(state)
+                is PagingStartMsg -> startPaging(state, state.fetchParams)
 
-                is PagingStartWithParamsMsg<*, *> -> startPaging(state, msg.params as? FETCH_PARAMS)
+                is PagingStartWithParamsMsg<*, *> -> startPaging(state, msg.fetchParams as? FETCH_PARAMS)
 
                 is PagingOnScrolledToEndMsg -> loadNextPage(state)
 
@@ -133,7 +133,7 @@ abstract class PagingFeature<T, FETCH_PARAMS>(
                     )
                 is PagingOnSwipeMsg -> Update.update(
                         state.toRefreshingState().copy(isPageLoading = true), BatchCmd(
-                        //no matter what params we pass except namespace, since we've override hashcode() method
+                        //no matter what fetchParams we pass except namespace, since we've override hashcode() method
                         CancelCmd(PagingLoadItemsCmd(1, state.fetchParams, namespace)),
                         CancelCmd(PagingRefreshItemsCmd(state.fetchParams, namespace)),
                         PagingRefreshItemsCmd(state.fetchParams, ns = namespace)
@@ -151,12 +151,12 @@ abstract class PagingFeature<T, FETCH_PARAMS>(
                         .copy(
                                 isPageLoading = true,
                                 isStarted = true,
-                                fetchParams = fetchParams ?: state.fetchParams
+                                fetchParams = fetchParams
                         ), BatchCmd(
-                //no matter what params we pass except namespace, since we've override hashcode() method
+                //no matter what fetchParams we pass except namespace, since we've override hashcode() method
                 CancelCmd(PagingLoadItemsCmd(1, state.fetchParams, namespace)),
                 CancelCmd(PagingRefreshItemsCmd(state.fetchParams, namespace)),
-                PagingRefreshItemsCmd(fetchParams ?: state.fetchParams, ns = namespace)
+                PagingRefreshItemsCmd(fetchParams, ns = namespace)
         )
         )
     }
@@ -189,10 +189,10 @@ abstract class PagingFeature<T, FETCH_PARAMS>(
                         state.toErrorState()
                     } else {
                         state.toRetryState()
-                    }.copy(nextPage = state.nextPage.dec()), LogThrowableCmd(msg.err)
+                    }.copy(nextPage = state.nextPage.dec()), LogThrowableCmd(msg.err, namespace)
             )
         }
-        is PagingRefreshItemsCmd<*> -> Update.update(state.toErrorState(), LogThrowableCmd(msg.err))
+        is PagingRefreshItemsCmd<*> -> Update.update(state.toErrorState(), LogThrowableCmd(msg.err, namespace))
         else -> throw IllegalArgumentException("Can't handle msg $msg")
     }
 

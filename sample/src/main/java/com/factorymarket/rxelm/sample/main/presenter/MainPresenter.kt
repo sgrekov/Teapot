@@ -28,7 +28,7 @@ class MainPresenter @Inject constructor(
     private val program: CoroutineCompositeFeature<MainState> = CoroutineCompositeFeature(programBuilder, this)
     private val pagingFeature = CoPagingFeature(this, service.getUserName())
 
-    override suspend fun fetchPage(page: Int, userName: String): PagingResult<Repository> {
+    override suspend fun fetchPage(page: Int, userName: String?): PagingResult<Repository> {
         return service.getStarredRepos2(userName, page)
     }
 

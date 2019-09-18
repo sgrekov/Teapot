@@ -5,6 +5,7 @@ import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.contract.*
 import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.msg.Msg
+import com.factorymarket.rxelm.msg.ProxyMsg
 import com.factorymarket.rxelm.program.Program
 import com.factorymarket.rxelm.sub.Sub
 
@@ -22,6 +23,10 @@ abstract class CompositeFeature<S : State>(
 
     fun accept(msg: Msg) {
         program.accept(msg)
+    }
+
+    fun acceptCommand(cmd : Cmd){
+        accept(ProxyMsg(cmd))
     }
 
     fun state(): S? {
@@ -78,14 +83,16 @@ abstract class CompositeFeature<S : State>(
     override fun update(msg: Msg, state: S): Update<S> {
         var combinedCmd = BatchCmd()
         var mainComponentState = state
+
         components.forEach { (component, toSubStateFun, toMainStateFun) ->
             if (component.handlesMessage(msg)) {
                 val componentStateBeforeUpdate = toSubStateFun?.invoke(mainComponentState) ?: mainComponentState
-                val (componentStateAfterUpdate, componentCmd) = component.update(msg, componentStateBeforeUpdate)
+                val updateResult = component.update(msg, componentStateBeforeUpdate)
+                val componentStateAfterUpdate = updateResult.updatedState
                 val updatedState = componentStateAfterUpdate ?: componentStateBeforeUpdate
                 mainComponentState = toMainStateFun?.invoke(updatedState, mainComponentState)
                         ?: run { if (componentStateAfterUpdate != null) componentStateAfterUpdate as S else mainComponentState }
-                combinedCmd = combinedCmd.merge(componentCmd)
+                combinedCmd = combinedCmd.merge(updateResult.cmds)
             }
         }
         return Update.update(mainComponentState, (combinedCmd as Cmd))

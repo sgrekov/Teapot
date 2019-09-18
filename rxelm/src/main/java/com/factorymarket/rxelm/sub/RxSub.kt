@@ -59,7 +59,7 @@ class RxSub<S : State>(private val outputScheduler : Scheduler) : Sub<S> {
      *
      * If it is, subscribes them if not - just delete.
      */
-    override fun subscribe(state: S, scheduler: Scheduler) {
+    override fun subscribe(state: S) {
         moveConditionalSubsToSubsIfTheyMatchPredicate(state)
 
         if (subs.isEmpty()) {

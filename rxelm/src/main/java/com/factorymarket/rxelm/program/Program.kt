@@ -5,8 +5,10 @@ import com.factorymarket.rxelm.contract.*
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.log.LogType
 import com.factorymarket.rxelm.log.RxElmLogger
+import com.factorymarket.rxelm.middleware.Middleware
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Init
+import com.factorymarket.rxelm.msg.ProxyMsg
 import com.factorymarket.rxelm.sub.Sub
 import java.util.ArrayDeque
 
@@ -108,7 +110,7 @@ class Program<S : State> internal constructor(
         state = newState
         lock = false
 
-        sub?.subscribe(newState, outputScheduler)
+        sub?.subscribe(newState)
 
         if (command !== None) {
             if (command is BatchCmd) {

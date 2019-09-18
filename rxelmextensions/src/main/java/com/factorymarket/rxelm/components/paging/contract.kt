@@ -11,7 +11,7 @@ interface RxPagingCommandsHandler<T, PARAMS> {
 
 interface CoPagingCommandsHandler<T, PARAMS> {
 
-    suspend fun fetchPage(page: Int, params: PARAMS): PagingResult<T>
+    suspend fun fetchPage(page: Int, params: PARAMS?): PagingResult<T>
 }
 
 interface PagingView  {

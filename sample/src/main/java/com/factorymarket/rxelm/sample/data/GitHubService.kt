@@ -44,7 +44,7 @@ class GitHubService(private val scheduler: Scheduler) : RepoService {
         }.subscribeOn(scheduler)
     }
 
-    override suspend fun getStarredRepos2(userName: String, page: Int): PagingResult<Repository> {
+    override suspend fun getStarredRepos2(userName: String?, page: Int): PagingResult<Repository> {
         val stargazerService = StargazerService(client)
         val iterator = stargazerService.pageStarred((page - 1) * PAGE_SIZE, PAGE_SIZE)
         val items = iterator.next().toList()
