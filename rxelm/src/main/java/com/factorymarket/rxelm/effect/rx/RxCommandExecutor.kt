@@ -61,6 +61,7 @@ class RxCommandExecutor(
                     }
                 }
             }
+            is ProxyCmd -> messageConsumer.accept(cmd.msg)
             else -> handleCmd(cmd)
         }
     }

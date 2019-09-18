@@ -48,6 +48,7 @@ dependencies {
     implementation "com.google.dagger:dagger:2.14.1"
     implementation 'com.jakewharton:butterknife:10.1.0'
     kapt 'com.jakewharton:butterknife-compiler:10.1.0'
+    implementation 'com.github.markomilos:paginate:0.5.1'
 
     implementation project(':rxelm')
     implementation project(':rxelmextensions')

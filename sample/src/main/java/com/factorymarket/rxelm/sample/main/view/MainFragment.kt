@@ -15,6 +15,7 @@ import com.factorymarket.rxelm.sample.BaseFragment
 import com.factorymarket.rxelm.sample.R
 import com.factorymarket.rxelm.sample.main.di.MainModule
 import com.factorymarket.rxelm.sample.main.presenter.MainPresenter
+import com.paginate.Paginate
 import org.eclipse.egit.github.core.Repository
 import javax.inject.Inject
 
@@ -27,8 +28,12 @@ class MainFragment : BaseFragment(), IMainView {
     @JvmField @BindView(R.id.refresh) var refreshBtn: Button? = null
     @JvmField @BindView(R.id.cancel) var cancelBtn: Button? = null
 
+    private var paginate: Paginate? = null
+    lateinit var adapter : ReposAdapter
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        adapter = ReposAdapter(listOf(), layoutInflater)
 
         getActivityComponent()
             .plusMainComponent(MainModule(this))
@@ -42,7 +47,9 @@ class MainFragment : BaseFragment(), IMainView {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         reposList?.layoutManager = LinearLayoutManager(activity)
+        reposList?.adapter = adapter
 
         refreshBtn?.setOnClickListener {
             presenter.refresh()
@@ -52,7 +59,19 @@ class MainFragment : BaseFragment(), IMainView {
             presenter.cancel()
         }
 
+        setRepos(listOf())
+        setupPagination()
+
         presenter.render()
+    }
+
+    private fun setupPagination() {
+        paginate?.unbind()
+
+        paginate = Paginate.with(reposList, presenter)
+                .setLoadingTriggerThreshold(5)
+                .addLoadingListItem(false)
+                .build()
     }
 
     override fun onDestroy() {
@@ -81,10 +100,13 @@ class MainFragment : BaseFragment(), IMainView {
     }
 
     override fun setRepos(reposList: List<Repository>) {
-        this.reposList?.adapter = ReposAdapter(reposList, layoutInflater)
+        if (adapter.repos !== reposList){
+            adapter.repos = reposList
+            adapter.notifyDataSetChanged()
+        }
     }
 
-    private inner class ReposAdapter(private val repos: List<Repository>, private val inflater: LayoutInflater) :
+    inner class ReposAdapter(var repos: List<Repository>, private val inflater: LayoutInflater) :
         RecyclerView.Adapter<ReposAdapter.RepoViewHolder>() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RepoViewHolder {
@@ -102,7 +124,7 @@ class MainFragment : BaseFragment(), IMainView {
             return repos.size
         }
 
-        internal inner class RepoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        inner class RepoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
             var repoName: TextView = itemView.findViewById(R.id.repo_name) as TextView
             var repoStarsCount: TextView = itemView.findViewById(R.id.repo_stars_count) as TextView

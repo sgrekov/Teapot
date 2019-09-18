@@ -1,7 +1,9 @@
 package com.factorymarket.rxelm.sample.main.presenter
 
 
+import com.factorymarket.rxelm.cmd.CancelByClassCmd
 import com.factorymarket.rxelm.cmd.Cmd
+import com.factorymarket.rxelm.cmd.ProxyCmd
 import com.factorymarket.rxelm.components.paging.*
 import com.factorymarket.rxelm.contract.PluginUpdate
 import com.factorymarket.rxelm.contract.Renderable
@@ -14,6 +16,7 @@ import com.factorymarket.rxelm.sample.data.RepoService
 import com.factorymarket.rxelm.sample.main.model.*
 import com.factorymarket.rxelm.sample.main.view.IMainView
 import com.factorymarket.rxelm.sample.navigation.Navigator
+import com.paginate.Paginate
 import org.eclipse.egit.github.core.Repository
 import timber.log.Timber
 import javax.inject.Inject
@@ -23,7 +26,7 @@ class MainPresenter @Inject constructor(
         programBuilder: ProgramBuilder,
         private val service: RepoService,
         private val navigator: Navigator
-) : PluginUpdate<MainState>, Renderable<MainState>, CoPagingCommandsHandler<Repository, String> {
+) : PluginUpdate<MainState>, Renderable<MainState>, CoPagingCommandsHandler<Repository, String>, Paginate.Callbacks {
 
     private val program: CoroutineCompositeFeature<MainState> = CoroutineCompositeFeature(programBuilder, this)
     private val pagingFeature = CoPagingFeature(this, service.getUserName())
@@ -42,10 +45,12 @@ class MainPresenter @Inject constructor(
 
     override fun update(msg: Msg, state: MainState): Update<MainState> {
         return when (msg) {
-//            is Init -> Update.update(state.copy(isLoading = true), LoadReposCmd(state.userName))
-//            is ReposLoadedMsg -> Update.state(state.copy(isLoading = false, reposList = msg.reposList))
-//            is CancelMsg -> Update.update(state.copy(isLoading = false, isCanceled = true), CancelByClassCmd(cmdClass = LoadReposCmd::class))
-//            is RefreshMsg -> Update.update(state.copy(isLoading = true, isCanceled = false, reposList = listOf()), LoadReposCmd(state.userName))
+            is CancelMsg -> Update.update(
+                    state.copy(
+                            isCanceled = true,
+                            reposList = state.reposList.toErrorState()),
+                    CancelByClassCmd(cmdClass = PagingRefreshItemsCmd::class))
+            is RefreshMsg -> Update.effect(ProxyCmd(PagingStartMsg()))
             is PagingErrorMsg -> {
                 Timber.e(msg.err)
                 Update.idle()
@@ -72,6 +77,7 @@ class MainPresenter @Inject constructor(
                 reposList.isFullscreenLoaderVisible -> {
                     view.showErrorText(false)
                     view.showProgress()
+                    view.setRepos(listOf())
                 }
                 reposList.isErrorStateVisible || state.isCanceled || reposList.items.isEmpty() -> {
                     view.hideProgress()
@@ -86,6 +92,15 @@ class MainPresenter @Inject constructor(
             }
         }
     }
+
+    override fun onLoadMore() {
+        program.accept(PagingOnScrolledToEndMsg())
+    }
+
+    override fun isLoading(): Boolean = program.state()?.reposList?.isBlockedForLoadingNextPage() ?: true
+
+    override fun hasLoadedAllItems() = program.state()?.reposList?.hasLoadedAllItems() ?: false
+
 
     fun render() {
         program.state()?.let(program::render)

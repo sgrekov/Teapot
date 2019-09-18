@@ -49,6 +49,7 @@ class CoroutinesCommandExecutor(
                     }
                 }
             }
+            is ProxyCmd -> messageConsumer.accept(cmd.msg)
             else -> handleCmd(cmd)
         }
     }
