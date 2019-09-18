@@ -1,8 +1,8 @@
 package com.factorymarket.rxelm.sample.data
 
+import com.factorymarket.rxelm.components.paging.PagingResult
 import io.reactivex.Scheduler
 import io.reactivex.Single
-import kotlinx.coroutines.delay
 import org.eclipse.egit.github.core.Repository
 import org.eclipse.egit.github.core.RepositoryId
 import org.eclipse.egit.github.core.client.GitHubClient
@@ -10,7 +10,11 @@ import org.eclipse.egit.github.core.service.RepositoryService
 import org.eclipse.egit.github.core.service.StargazerService
 import org.eclipse.egit.github.core.service.UserService
 
-class GitHubService(private val scheduler: Scheduler) : IApiService {
+class GitHubService(private val scheduler: Scheduler) : RepoService {
+
+    companion object {
+        const val PAGE_SIZE = 20
+    }
 
     private var client = GitHubClient()
 
@@ -40,9 +44,11 @@ class GitHubService(private val scheduler: Scheduler) : IApiService {
         }.subscribeOn(scheduler)
     }
 
-    override suspend fun getStarredRepos2(userName: String): List<Repository> {
+    override suspend fun getStarredRepos2(userName: String, page: Int): PagingResult<Repository> {
         val stargazerService = StargazerService(client)
-        return stargazerService.starred
+        val iterator = stargazerService.pageStarred((page - 1) * PAGE_SIZE, PAGE_SIZE)
+        val items = iterator.next().toList()
+        return PagingResult(items, iterator.lastPage, iterator.lastPage * PAGE_SIZE)
     }
 
     override fun getRepo(id: RepositoryId): Single<Repository> {

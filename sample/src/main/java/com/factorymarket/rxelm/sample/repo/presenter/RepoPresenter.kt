@@ -6,13 +6,12 @@ import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.program.Program
 import com.factorymarket.rxelm.program.ProgramBuilder
-import com.factorymarket.rxelm.sample.data.IApiService
+import com.factorymarket.rxelm.sample.data.RepoService
 import com.factorymarket.rxelm.sample.repo.model.InitRepo
 import com.factorymarket.rxelm.sample.repo.model.LoadRepo
 import com.factorymarket.rxelm.sample.repo.model.RepoLoaded
 import com.factorymarket.rxelm.sample.repo.model.RepoState
 import com.factorymarket.rxelm.sample.repo.view.IRepoView
-import io.reactivex.Single
 import org.eclipse.egit.github.core.RepositoryId
 import javax.inject.Inject
 import javax.inject.Named
@@ -21,8 +20,8 @@ class RepoPresenter @Inject constructor(
         private val view: IRepoView,
         @Named("repo_id") private val repoId: String,
         programBuilder: ProgramBuilder,
-        private val apiService: IApiService
-) : CoroutineComponent<RepoState>, Renderable<RepoState> {
+        private val apiService: RepoService
+) : CoroutineFeature<RepoState>, Renderable<RepoState> {
 
     override fun render(state: RepoState) {
         view.showLoading(state.isLoading)
@@ -39,7 +38,7 @@ class RepoPresenter @Inject constructor(
         return RepoState(openRepoId = repoId, isLoading = true)
     }
 
-    override suspend fun callCoroutine(cmd: Cmd): Msg {
+    override suspend fun call(cmd: Cmd): Msg {
         return when (cmd) {
             is LoadRepo -> RepoLoaded(apiService.getRepo2(RepositoryId.createFromUrl(cmd.id)))
             else -> Idle

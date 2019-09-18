@@ -1,8 +1,7 @@
 package com.factorymarket.rxelm.effect.coroutine
 
 import com.factorymarket.rxelm.cmd.*
-import com.factorymarket.rxelm.contract.CoroutineComponent
-import com.factorymarket.rxelm.contract.State
+import com.factorymarket.rxelm.contract.CoroutinesEffectHandler
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.msg.Msg
@@ -10,12 +9,12 @@ import com.factorymarket.rxelm.program.MessageConsumer
 import kotlinx.coroutines.*
 import java.util.*
 
-class CoroutinesCommandExecutor<S : State>(
-        private val component: CoroutineComponent<S>,
+class CoroutinesCommandExecutor(
+        private val effectHandler: CoroutinesEffectHandler,
         private val outputDispatcher: CoroutineDispatcher,
         private val logTag: String,
         private val handleCmdErrors: Boolean,
-        private val logger: RxElmLogger?) : CommandExecutor<S> {
+        private val logger: RxElmLogger?) : CommandExecutor {
 
     lateinit var messageConsumer: MessageConsumer
     private val parentJob = SupervisorJob()
@@ -76,7 +75,7 @@ class CoroutinesCommandExecutor<S : State>(
 
     private suspend fun callComponent(cmdDispatcher: CoroutineDispatcher, cmd: Cmd): Msg {
         return withContext(cmdDispatcher) {
-            component.callCoroutine(cmd)
+            effectHandler.call(cmd)
         }
     }
 

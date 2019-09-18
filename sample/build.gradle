@@ -50,6 +50,7 @@ dependencies {
     kapt 'com.jakewharton:butterknife-compiler:10.1.0'
 
     implementation project(':rxelm')
+    implementation project(':rxelmextensions')
     testImplementation project(':rxelmtest')
 
     testImplementation 'junit:junit:4.12'

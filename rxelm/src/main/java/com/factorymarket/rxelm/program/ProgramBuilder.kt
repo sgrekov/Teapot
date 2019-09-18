@@ -1,20 +1,19 @@
 package com.factorymarket.rxelm.program
 
-import com.factorymarket.rxelm.contract.Component
-import com.factorymarket.rxelm.contract.CoroutineComponent
-import com.factorymarket.rxelm.contract.RxComponent
-import com.factorymarket.rxelm.contract.State
+import com.factorymarket.rxelm.contract.*
 import com.factorymarket.rxelm.effect.coroutine.CoroutinesCommandExecutor
 import com.factorymarket.rxelm.log.RxElmLogger
 import io.reactivex.Scheduler
 import java.lang.IllegalArgumentException
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.effect.rx.RxCommandExecutor
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
 class ProgramBuilder {
 
     private var outputScheduler: Scheduler? = null
+    private var outputDispatcher: CoroutineDispatcher? = null
     private var logger: RxElmLogger? = null
     private var handleCmdErrors: Boolean = true
 
@@ -27,6 +26,15 @@ class ProgramBuilder {
         return this
     }
 
+    /**
+     * @param dispatcher must be single threaded, like Dispatchers.Main,
+     * since Program's implementation is not thread safe
+     */
+    fun outputDispatcher(d: CoroutineDispatcher): ProgramBuilder {
+        this.outputDispatcher = d
+        return this
+    }
+
     fun logger(logger: RxElmLogger): ProgramBuilder {
         this.logger = logger
         return this
@@ -34,29 +42,35 @@ class ProgramBuilder {
 
     /**
      * By default handleCmdErrors is set to true and RxElm handles errors from side effect and sends them in [ErrorMsg]
-     * If pass handle=false, then all unhandled errors from [Component.call] will lead to crash
+     * If pass handle=false, then all unhandled errors from [Feature.call] will lead to crash
      */
     fun handleCmdErrors(handle: Boolean): ProgramBuilder {
         this.handleCmdErrors = handle
         return this
     }
 
-    fun <S : State> build(component: RxComponent<S>): Program<S> {
+    fun <S : State> build(feature: RxFeature<S>): Program<S> {
+        return build(feature, feature)
+    }
+
+    fun <S : State> build(update: Update1<S>, effectHandler: RxEffectHandler): Program<S> {
         if (outputScheduler == null) {
             throw IllegalArgumentException("Output Scheduler must be provided!")
         }
-        val commandExecutor = RxCommandExecutor(component, "", handleCmdErrors, outputScheduler!!, logger)
-        val program = Program(component, logger)
+        val commandExecutor = RxCommandExecutor(effectHandler, "", handleCmdErrors, outputScheduler!!, logger)
+        val program = Program(update, logger)
         program.addCommandExecutor(commandExecutor)
         return program
     }
 
-    fun <S : State> build(component: CoroutineComponent<S>): Program<S> {
-        if (outputScheduler == null) {
-            throw IllegalArgumentException("Output Scheduler must be provided!")
-        }
-        val commandExecutor = CoroutinesCommandExecutor(component, Dispatchers.Main, "", handleCmdErrors, logger)
-        val program = Program(component, logger)
+    fun <S : State> build(feature: CoroutineFeature<S>): Program<S> {
+        return build(feature, feature)
+    }
+
+    fun <S : State> build(update1: Update1<S>, effectHandler: CoroutinesEffectHandler): Program<S> {
+        val dispatcher = outputDispatcher ?: throw IllegalArgumentException("Output Dispatcher must be provided!")
+        val commandExecutor = CoroutinesCommandExecutor(effectHandler, dispatcher, "", handleCmdErrors, logger)
+        val program = Program(update1, logger)
         program.addCommandExecutor(commandExecutor)
         return program
     }

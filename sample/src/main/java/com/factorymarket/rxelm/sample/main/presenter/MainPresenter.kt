@@ -1,18 +1,16 @@
 package com.factorymarket.rxelm.sample.main.presenter
 
 
-import com.factorymarket.rxelm.cmd.CancelByClassCmd
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.contract.CoroutineComponent
+import com.factorymarket.rxelm.components.paging.*
+import com.factorymarket.rxelm.contract.PluginUpdate
 import com.factorymarket.rxelm.contract.Renderable
 import com.factorymarket.rxelm.contract.Update
+import com.factorymarket.rxelm.feature.CoroutineCompositeFeature
 import com.factorymarket.rxelm.msg.ErrorMsg
-import com.factorymarket.rxelm.msg.Idle
-import com.factorymarket.rxelm.msg.Init
 import com.factorymarket.rxelm.msg.Msg
-import com.factorymarket.rxelm.program.Program
 import com.factorymarket.rxelm.program.ProgramBuilder
-import com.factorymarket.rxelm.sample.data.IApiService
+import com.factorymarket.rxelm.sample.data.RepoService
 import com.factorymarket.rxelm.sample.main.model.*
 import com.factorymarket.rxelm.sample.main.view.IMainView
 import com.factorymarket.rxelm.sample.navigation.Navigator
@@ -23,22 +21,35 @@ import javax.inject.Inject
 class MainPresenter @Inject constructor(
         val view: IMainView,
         programBuilder: ProgramBuilder,
-        private val service: IApiService,
+        private val service: RepoService,
         private val navigator: Navigator
-) : CoroutineComponent<MainState>, Renderable<MainState> {
+) : PluginUpdate<MainState>, Renderable<MainState>, CoPagingCommandsHandler<Repository, String> {
 
-    private val program: Program<MainState> = programBuilder.build(this)
+    private val program: CoroutineCompositeFeature<MainState> = CoroutineCompositeFeature(programBuilder, this)
+    private val pagingFeature = CoPagingFeature(this, service.getUserName())
 
-    fun init(initialState: MainState?) {
-        program.run(initialState ?: MainState(userName = service.getUserName()))
+    override suspend fun fetchPage(page: Int, userName: String): PagingResult<Repository> {
+        return service.getStarredRepos2(userName, page)
+    }
+
+    fun init(restoredState: MainState?) {
+        program.addComponent(pagingFeature,
+                { mainState -> mainState.reposList },
+                { repos, mainState -> mainState.copy(reposList = repos) })
+        program.addMainComponent(this)
+        program.run(restoredState ?: initialState(), initialMsg = PagingStartMsg())
     }
 
     override fun update(msg: Msg, state: MainState): Update<MainState> {
         return when (msg) {
-            is Init -> Update.update(state.copy(isLoading = true), LoadReposCmd(state.userName))
-            is ReposLoadedMsg -> Update.state(state.copy(isLoading = false, reposList = msg.reposList))
-            is CancelMsg -> Update.update(state.copy(isLoading = false, isCanceled = true), CancelByClassCmd(cmdClass = LoadReposCmd::class))
-            is RefreshMsg -> Update.update(state.copy(isLoading = true, isCanceled = false, reposList = listOf()), LoadReposCmd(state.userName))
+//            is Init -> Update.update(state.copy(isLoading = true), LoadReposCmd(state.userName))
+//            is ReposLoadedMsg -> Update.state(state.copy(isLoading = false, reposList = msg.reposList))
+//            is CancelMsg -> Update.update(state.copy(isLoading = false, isCanceled = true), CancelByClassCmd(cmdClass = LoadReposCmd::class))
+//            is RefreshMsg -> Update.update(state.copy(isLoading = true, isCanceled = false, reposList = listOf()), LoadReposCmd(state.userName))
+            is PagingErrorMsg -> {
+                Timber.e(msg.err)
+                Update.idle()
+            }
             is ErrorMsg -> {
                 Timber.e(msg.err)
                 Update.idle()
@@ -47,35 +58,37 @@ class MainPresenter @Inject constructor(
         }
     }
 
+    override fun handlesMessage(msg: Msg): Boolean = true
+
+    override fun handlesCommands(cmd: Cmd): Boolean = true
+
+    override fun initialState(): MainState = MainState(userName = service.getUserName(), reposList = pagingFeature.initialState())
+
     override fun render(state: MainState) {
         state.apply {
             view.setTitle(state.userName + "'s starred repos")
 
-            if (isLoading) {
-                view.showErrorText(false)
-                if (reposList.isEmpty()) {
+            when {
+                reposList.isFullscreenLoaderVisible -> {
+                    view.showErrorText(false)
                     view.showProgress()
                 }
-            } else {
-                view.hideProgress()
-                if (reposList.isEmpty()) {
+                reposList.isErrorStateVisible || state.isCanceled || reposList.items.isEmpty() -> {
+                    view.hideProgress()
                     view.setErrorText(if (state.isCanceled) "Request is canceled" else "User has no starred repos")
                     view.showErrorText(true)
                 }
+                else -> {
+                    view.showErrorText(false)
+                    view.hideProgress()
+                    view.setRepos(reposList.items)
+                }
             }
-            view.setRepos(reposList)
         }
     }
 
     fun render() {
-        program.render()
-    }
-
-    override suspend fun callCoroutine(cmd: Cmd): Msg {
-        return when (cmd) {
-            is LoadReposCmd -> ReposLoadedMsg(service.getStarredRepos2(cmd.userName))
-            else -> Idle
-        }
+        program.state()?.let(program::render)
     }
 
     fun destroy() {

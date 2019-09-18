@@ -7,7 +7,6 @@ import com.factorymarket.rxelm.log.LogType
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Init
-import com.factorymarket.rxelm.sub.RxElmSubscriptions
 import com.factorymarket.rxelm.sub.Sub
 import java.util.ArrayDeque
 
@@ -18,9 +17,9 @@ import java.util.ArrayDeque
  * All interactions happen in cycle:
  *
  * [Msg]
- * -> update(Message, State)[Component.update] : [Pair]<[State], [Cmd]>
- * -> (Optional)render(State)[Component.render]
- * -> call(Command)[Component.call]
+ * -> update(Message, State)[Feature.update] : [Pair]<[State], [Cmd]>
+ * -> (Optional)render(State)[Feature.render]
+ * -> call(Command)[Feature.call]
  * -> [Msg].
  *
  *
@@ -29,15 +28,15 @@ import java.util.ArrayDeque
  * Function [render()][RenderableComponent.render] renders view in declarative style according to [State].
  * No other changes of View can happen outside of this function
  *
- * All changes of state must be made only in function [Update][Component.update], which is a pure function.
+ * All changes of state must be made only in function [Update][Feature.update], which is a pure function.
  * There cannot happen any calls to side effect, like IO work, HTTP requests, etc
  * All user interactions are processed through inheritances of Msg class.
- * Function [Update][Component.update] returns new State with changed fields and [Command][Cmd].
+ * Function [Update][Feature.update] returns new State with changed fields and [Command][Cmd].
  *
  * Class [Cmd] represents desired Side Effect. If you want do some side effect,
- * you return a [Command][Cmd] from [Update()][Component.update] method
- * and in function [Call][Component.call] do the side effect itself.
- * Results wrapped in resulting [Msg] go to [Update][Component.update] method.
+ * you return a [Command][Cmd] from [Update()][Feature.update] method
+ * and in function [Call][Feature.call] do the side effect itself.
+ * Results wrapped in resulting [Msg] go to [Update][Feature.update] method.
  *
  * Program executes [Commands][Cmd] in [flatMap][Observable.flatMap], that means
  * they will be executed in parallel in [io() scheduler][Schedulers.io].
@@ -48,7 +47,7 @@ import java.util.ArrayDeque
  * @param outputScheduler the scheduler to [observe on][Observable.observeOn]
  */
 class Program<S : State> internal constructor(
-        private val component: Component<S, out Effect>,
+        private val feature: Update1<S>,
         private val logger: RxElmLogger?) : MessageConsumer {
 
     /** Here messages are kept until they can be passed to messageRelay */
@@ -57,7 +56,7 @@ class Program<S : State> internal constructor(
     /** State at this moment */
     private lateinit var state: S
 
-    private lateinit var commandExecutor: CommandExecutor<S>
+    private lateinit var commandExecutor: CommandExecutor
 
     private var lock: Boolean = false
     private var isRendering: Boolean = false
@@ -88,14 +87,14 @@ class Program<S : State> internal constructor(
         }
 
         val msg = messageQueue.first
-        val update = update(msg, component, logger)
+        val update = update(msg, feature, logger)
         val command = update.cmds
         val newState = update.updatedState ?: state
 
         if (newState !== this.state) {
             isRendering = true
-            if (component is Renderable<*>) {
-                (component as Renderable<S>).render(newState)
+            if (feature is Renderable<*>) {
+                (feature as Renderable<S>).render(newState)
             }
             isRendering = false
         }
@@ -122,10 +121,10 @@ class Program<S : State> internal constructor(
 
     fun isRendering(): Boolean = isRendering
 
-    private fun update(msg: Msg, component: Component<S, out Effect>, logger: RxElmLogger?): Update<S> {
+    private fun update(msg: Msg, feature: Update1<S>, logger: RxElmLogger?): Update<S> {
         logUpdate(logger, msg)
 
-        val updateResult = component.update(msg, this.state)
+        val updateResult = feature.update(msg, this.state)
 
         if (messageQueue.size > 0) {
             messageQueue.removeFirst()
@@ -158,8 +157,8 @@ class Program<S : State> internal constructor(
     }
 
     fun render() {
-        if (component is Renderable<*>) {
-            (component as Renderable<S>).render(this.state)
+        if (feature is Renderable<*>) {
+            (feature as Renderable<S>).render(this.state)
         }
     }
 
@@ -193,7 +192,7 @@ class Program<S : State> internal constructor(
         sub?.dispose()
     }
 
-    fun addCommandExecutor(ce: CommandExecutor<S>) {
+    fun addCommandExecutor(ce: CommandExecutor) {
         ce.addMessageConsumer(this)
         commandExecutor = ce
     }

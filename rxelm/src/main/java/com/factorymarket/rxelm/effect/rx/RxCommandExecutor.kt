@@ -1,7 +1,8 @@
 package com.factorymarket.rxelm.effect.rx
 
 import com.factorymarket.rxelm.cmd.*
-import com.factorymarket.rxelm.contract.RxComponent
+import com.factorymarket.rxelm.contract.RxEffectHandler
+import com.factorymarket.rxelm.contract.RxFeature
 import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.msg.ErrorMsg
@@ -18,12 +19,12 @@ import io.reactivex.schedulers.Schedulers
 import java.util.*
 import kotlin.collections.HashMap
 
-class RxCommandExecutor<S : State>(
-        private val component: RxComponent<S>,
+class RxCommandExecutor(
+        private val component: RxEffectHandler,
         private val logTag : String,
         private val handleCmdErrors: Boolean,
         private val outputScheduler: Scheduler,
-        private val logger: RxElmLogger?) : CommandExecutor<S> {
+        private val logger: RxElmLogger?) : CommandExecutor {
 
     /**
      * Since we can cancel commands by their class, we hold commands in map bags by the hashcode
@@ -122,14 +123,14 @@ class RxCommandExecutor<S : State>(
     private fun cmdCall(cmd: Cmd): Observable<Msg> {
 
         return if (handleCmdErrors) {
-            component.call(cmd).toSingle()
+            component.call(cmd)
                     .onErrorResumeNext { err ->
                         logger?.takeIf { it.logType().needToShowCommands() }?.error(logTag, err)
                         Single.just(ErrorMsg(err, cmd))
                     }
                     .toObservable()
         } else {
-            component.call(cmd).toSingle()
+            component.call(cmd)
                     .toObservable()
         }
     }

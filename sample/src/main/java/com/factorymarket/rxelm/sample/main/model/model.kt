@@ -1,15 +1,15 @@
 package com.factorymarket.rxelm.sample.main.model
 
 import com.factorymarket.rxelm.cmd.Cmd
+import com.factorymarket.rxelm.components.paging.PagingState
 import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.msg.Msg
 import org.eclipse.egit.github.core.Repository
 
 data class MainState(
-    val isLoading: Boolean = true,
     val isCanceled : Boolean = false,
     val userName: String,
-    val reposList: List<Repository> = listOf()
+    val reposList: PagingState<Repository, String>
 ) : State()
 
 

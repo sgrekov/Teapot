@@ -1,9 +1,8 @@
 package com.factorymarket.rxelm.cmd
 
-import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.program.MessageConsumer
 
-interface CommandExecutor<S : State> {
+interface CommandExecutor {
 
     fun executeCmd(cmd: Cmd)
 

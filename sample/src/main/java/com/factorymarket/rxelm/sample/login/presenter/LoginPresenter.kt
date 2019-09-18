@@ -9,9 +9,8 @@ import com.factorymarket.rxelm.program.Program
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.program.ProgramBuilder
 import com.factorymarket.rxelm.sample.navigation.Navigator
-import com.factorymarket.rxelm.sample.data.IApiService
+import com.factorymarket.rxelm.sample.data.RepoService
 import com.factorymarket.rxelm.sample.data.IAppPrefs
-import com.factorymarket.rxelm.sample.inView
 import com.factorymarket.rxelm.sample.login.model.GetSavedUserCmd
 import com.factorymarket.rxelm.sample.login.model.GoToMainCmd
 import com.factorymarket.rxelm.sample.login.model.IsSaveCredentialsMsg
@@ -26,7 +25,6 @@ import com.factorymarket.rxelm.sample.login.model.UserCredentialsLoadedMsg
 import com.factorymarket.rxelm.sample.login.model.UserCredentialsSavedMsg
 import com.factorymarket.rxelm.sample.login.view.ILoginView
 import io.reactivex.Observable
-import io.reactivex.Single
 import io.reactivex.disposables.Disposable
 import org.eclipse.egit.github.core.client.RequestException
 import timber.log.Timber
@@ -36,9 +34,9 @@ class LoginPresenter @Inject constructor(
         private val loginView: ILoginView,
         programBuilder: ProgramBuilder,
         private val appPrefs: IAppPrefs,
-        private val apiService: IApiService,
+        private val apiService: RepoService,
         private val navigator: Navigator
-) : CoroutineComponent<LoginState>, Renderable<LoginState> {
+) : CoroutineFeature<LoginState>, Renderable<LoginState> {
 
     private val program: Program<LoginState> = programBuilder.build(this)
 
@@ -113,7 +111,7 @@ class LoginPresenter @Inject constructor(
         program.render()
     }
 
-    override suspend fun callCoroutine(cmd: Cmd): Msg {
+    override suspend fun call(cmd: Cmd): Msg {
         return when (cmd) {
             is GetSavedUserCmd -> {
                 val (login, pass) = appPrefs.getUserSavedCredentials2()

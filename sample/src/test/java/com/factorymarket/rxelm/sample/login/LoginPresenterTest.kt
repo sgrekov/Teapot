@@ -1,9 +1,8 @@
 package com.factorymarket.rxelm.sample.login
 
 import com.factorymarket.rxelm.msg.Init
-import com.factorymarket.rxelm.program.Program
 import com.factorymarket.rxelm.program.ProgramBuilder
-import com.factorymarket.rxelm.sample.data.IApiService
+import com.factorymarket.rxelm.sample.data.RepoService
 import com.factorymarket.rxelm.sample.data.IAppPrefs
 import com.factorymarket.rxelm.sample.login.model.GetSavedUserCmd
 import com.factorymarket.rxelm.sample.login.model.GoToMainCmd
@@ -25,7 +24,7 @@ class LoginPresenterTest {
 
     lateinit var presenter: LoginPresenter
     lateinit var view: ILoginView
-    lateinit var loginService: IApiService
+    lateinit var loginService: RepoService
     lateinit var prefs: IAppPrefs
     lateinit var programBuilder: ProgramBuilder
     lateinit var spec : RxElmSpec<LoginState>
@@ -33,7 +32,7 @@ class LoginPresenterTest {
     @Before
     fun setUp() {
         view = mock(ILoginView::class.java)
-        loginService = mock(IApiService::class.java)
+        loginService = mock(RepoService::class.java)
         prefs = mock(IAppPrefs::class.java)
         programBuilder = ProgramBuilder().outputScheduler(Schedulers.trampoline())
         presenter = LoginPresenter(view, programBuilder, prefs, loginService, mock(Navigator::class.java))

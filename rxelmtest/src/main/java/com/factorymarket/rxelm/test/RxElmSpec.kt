@@ -2,7 +2,7 @@ package com.factorymarket.rxelm.test
 
 import com.factorymarket.rxelm.cmd.BatchCmd
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.contract.Component
+import com.factorymarket.rxelm.contract.Feature
 import com.factorymarket.rxelm.contract.Effect
 import com.factorymarket.rxelm.contract.State
 import com.factorymarket.rxelm.msg.Msg
@@ -10,7 +10,7 @@ import org.junit.Assert
 import org.junit.Assert.assertEquals
 
 
-class RxElmSpec<S : State> constructor(val component: Component<S, Effect>) {
+class RxElmSpec<S : State> constructor(val feature: Feature<S, Effect>) {
 
     private lateinit var state: S
     private var prevState: S? = null
@@ -37,11 +37,11 @@ class RxElmSpec<S : State> constructor(val component: Component<S, Effect>) {
     }
 
     fun copy(): RxElmSpec<S> {
-        return RxElmSpec(component).withCmd(this.cmd).withState(this.state)
+        return RxElmSpec(feature).withCmd(this.cmd).withState(this.state)
     }
 
     fun whenMsg(msg: Msg): RxElmSpec<S> {
-        val (newState, cmd) = component.update(msg, state)
+        val (newState, cmd) = feature.update(msg, state)
         return this.withState(newState ?: state, state).withCmd(cmd)
     }
 
