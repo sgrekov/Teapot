@@ -41,7 +41,9 @@ class RxElmSpec<S : State> constructor(val feature: Feature<S, Effect>) {
     }
 
     fun whenMsg(msg: Msg): RxElmSpec<S> {
-        val (newState, cmd) = feature.update(msg, state)
+        val update = feature.update(msg, state)
+        val newState = update.updatedState
+        val cmd = update.cmds
         return this.withState(newState ?: state, state).withCmd(cmd)
     }
 

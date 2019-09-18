@@ -48,7 +48,8 @@ import java.util.ArrayDeque
  */
 class Program<S : State> internal constructor(
         private val feature: Update1<S>,
-        private val logger: RxElmLogger?) : MessageConsumer {
+        private val logger: RxElmLogger?,
+        private val middlewares: List<Middleware>) : MessageConsumer {
 
     /** Here messages are kept until they can be passed to messageRelay */
     private var messageQueue = ArrayDeque<Msg>()
@@ -87,9 +88,14 @@ class Program<S : State> internal constructor(
         }
 
         val msg = messageQueue.first
+
+        processBeforeUpdateToMiddlewares(msg, this.state)
+
         val update = update(msg, feature, logger)
         val command = update.cmds
         val newState = update.updatedState ?: state
+
+        processAfterUpdateMiddlewares(msg, newState)
 
         if (newState !== this.state) {
             isRendering = true
@@ -102,7 +108,7 @@ class Program<S : State> internal constructor(
         state = newState
         lock = false
 
-        sub?.subscribe(newState)
+        sub?.subscribe(newState, outputScheduler)
 
         if (command !== None) {
             if (command is BatchCmd) {
@@ -119,12 +125,26 @@ class Program<S : State> internal constructor(
         pickNextMessageFromQueue()
     }
 
+    private fun processAfterUpdateMiddlewares(msg: Msg, newState: S) {
+        middlewares.forEach { middleware ->
+            middleware.afterUpdate(msg, newState)
+        }
+    }
+
+    private fun processBeforeUpdateToMiddlewares(msg: Msg, oldState: S) {
+        middlewares.forEach { middleware ->
+            middleware.beforeUpdate(msg, oldState)
+        }
+    }
+
     fun isRendering(): Boolean = isRendering
 
     private fun update(msg: Msg, feature: Update1<S>, logger: RxElmLogger?): Update<S> {
         logUpdate(logger, msg)
 
-        val updateResult = feature.update(msg, this.state)
+        val updateResult = if (msg is ProxyMsg) {
+            Update.effect(msg.cmd)
+        } else feature.update(msg, this.state)
 
         if (messageQueue.size > 0) {
             messageQueue.removeFirst()
@@ -172,6 +192,10 @@ class Program<S : State> internal constructor(
             lock = true
             runCycle()
         }
+    }
+
+    fun acceptCommand(cmd : Cmd){
+        accept(ProxyMsg(cmd))
     }
 
     private fun logAccept(logger: RxElmLogger?, msg: Msg) {

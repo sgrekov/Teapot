@@ -3,6 +3,7 @@ package com.factorymarket.rxelm.program
 import com.factorymarket.rxelm.contract.*
 import com.factorymarket.rxelm.effect.coroutine.CoroutinesCommandExecutor
 import com.factorymarket.rxelm.log.RxElmLogger
+import com.factorymarket.rxelm.middleware.Middleware
 import io.reactivex.Scheduler
 import java.lang.IllegalArgumentException
 import com.factorymarket.rxelm.msg.ErrorMsg
@@ -16,6 +17,7 @@ class ProgramBuilder {
     private var outputDispatcher: CoroutineDispatcher? = null
     private var logger: RxElmLogger? = null
     private var handleCmdErrors: Boolean = true
+    private var middlewares: MutableList<Middleware> = mutableListOf()
 
     /**
      * @param scheduler must be single threaded, like Schedulers.single() or AndroidSchedulers.mainThread(),
@@ -40,6 +42,10 @@ class ProgramBuilder {
         return this
     }
 
+    fun addMiddleware(m : Middleware) {
+        middlewares.add(m)
+    }
+
     /**
      * By default handleCmdErrors is set to true and RxElm handles errors from side effect and sends them in [ErrorMsg]
      * If pass handle=false, then all unhandled errors from [Feature.call] will lead to crash
@@ -58,7 +64,7 @@ class ProgramBuilder {
             throw IllegalArgumentException("Output Scheduler must be provided!")
         }
         val commandExecutor = RxCommandExecutor(effectHandler, "", handleCmdErrors, outputScheduler!!, logger)
-        val program = Program(update, logger)
+        val program = Program(update, logger, middlewares)
         program.addCommandExecutor(commandExecutor)
         return program
     }
@@ -70,7 +76,7 @@ class ProgramBuilder {
     fun <S : State> build(update1: Update1<S>, effectHandler: CoroutinesEffectHandler): Program<S> {
         val dispatcher = outputDispatcher ?: throw IllegalArgumentException("Output Dispatcher must be provided!")
         val commandExecutor = CoroutinesCommandExecutor(effectHandler, dispatcher, "", handleCmdErrors, logger)
-        val program = Program(update1, logger)
+        val program = Program(update1, logger, middlewares)
         program.addCommandExecutor(commandExecutor)
         return program
     }

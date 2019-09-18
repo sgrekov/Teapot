@@ -17,7 +17,7 @@ data class PagingState<T, FETCH_PARAMS>(
         val items: List<T> = listOf(),
         val totalPages: Int? = null,
         val nextPage: Int = 1,
-        val fetchParams: FETCH_PARAMS,
+        val fetchParams: FETCH_PARAMS?,
         val totalCount: Int? = null
 ) : State() {
 
@@ -99,9 +99,9 @@ abstract class PagingCmd(val namespace: String) : Cmd()
 
 data class PagingStartMsg(val ns: String = "") : PagingMsg(ns)
 data class PagingStartWithParamsMsg<PARAMS, FETCH_PARAMS>(
-    val customParams: PARAMS? = null,
-    val params: FETCH_PARAMS? = null,
-    val ns: String = ""
+        val customParams: PARAMS? = null,
+        val fetchParams: FETCH_PARAMS? = null,
+        val ns: String = ""
 ) : PagingMsg(ns)
 
 data class PagingOnScrolledToEndMsg(val ns: String = "") : PagingMsg(ns)
@@ -126,7 +126,7 @@ data class PagingOnSwipeMsg(val ns: String = "") : PagingMsg(ns)
 
 data class PagingLoadItemsCmd<FETCH_PARAMS>(
     val page: Int,
-    val params: FETCH_PARAMS,
+    val params: FETCH_PARAMS?,
     val ns: String = ""
 ) : PagingCmd(ns) {
 
@@ -136,7 +136,7 @@ data class PagingLoadItemsCmd<FETCH_PARAMS>(
 }
 
 data class PagingRefreshItemsCmd<FETCH_PARAMS>(
-    val params: FETCH_PARAMS,
+    val params: FETCH_PARAMS?,
     val ns: String = ""
 ) : PagingCmd(ns) {
     override fun hashCode(): Int {

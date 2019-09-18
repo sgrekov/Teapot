@@ -22,7 +22,7 @@ interface Update1<S : State> {
     fun update(msg: Msg, state: S): Update<S>
 }
 
-data class Update<S : State>(val updatedState: S?, val cmds: Cmd) {
+class Update<S : State> private constructor(val updatedState: S?, val cmds: Cmd) {
 
     companion object {
         fun <S : State> idle(): Update<S> {

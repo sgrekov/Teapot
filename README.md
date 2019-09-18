@@ -8,14 +8,14 @@ Unidirectional Dataflow library for Android inspired by The Elm Architecture.
 ## Dependency
 
 ```
-implementation 'com.factorymarket.rxelm:rxelm:0.3.0'
+implementation 'com.factorymarket.rxelm:rxelm:0.7.0'
 //Testing utility
-testImplementation 'com.factorymarket.rxelm:rxelm-test:0.2.0'
+testImplementation 'com.factorymarket.rxelm:rxelm-test:0.4.0'
 ```
 
 
 #### Snapshot
-Use `0.4.0-SNAPSHOT` as your version number and add the url to the snapshot repository:
+Use `0.X.0-SNAPSHOT` as your version number and add the url to the snapshot repository:
 
 ```
 allprojects {
@@ -27,7 +27,7 @@ allprojects {
 ```
 
 ```
-implementation 'com.factorymarket.rxelm:rxelm:0.4.0-SNAPSHOT'
+implementation 'com.factorymarket.rxelm:rxelm:0.X.0-SNAPSHOT'
 ```
 
 
@@ -65,7 +65,7 @@ Function render() takes State as an input, and renders view in declarative manne
 ### Minimal implementation
 
 ```kotlin
-class MyFragment : Fragment(), RenderableComponent {
+class MyFragment : Fragment(), RenderableComponent<IncrementDecrementState> {
 
   
     private lateinit var plusBtn: Button
@@ -94,12 +94,11 @@ class MyFragment : Fragment(), RenderableComponent {
         program.run(initialState = IncrementDecrementState(value = savedInstanceState?.getInt("counter", 0) ?: 0))              
     }
     
-    override fun update(msg: Msg, state: counterText): Pair<State, Cmd> {          
-            return when (msg) {
-                is Init -> state to None
-                is Inc -> state.copy(value = state.value + 1) to None               
-                is Dec -> state.copy(value = state.value - 1) to None
-                else -> state to None
+    override fun update(msg: Msg, state: counterText): Update<IncrementDecrementState> {          
+            return when (msg) {            
+                is Inc -> Update.state(state.copy(value = state.value + 1))               
+                is Dec -> Update.state(state.copy(value = state.value - 1))
+                else -> Update.idle()
             }
     }
     
