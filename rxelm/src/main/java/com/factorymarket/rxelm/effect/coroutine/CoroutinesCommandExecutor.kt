@@ -57,7 +57,7 @@ class CoroutinesCommandExecutor(
     private fun handleCmd(cmd: Cmd) {
         val cmdDispatcher = if (cmd is ViewCmd) outputDispatcher else Dispatchers.IO
 
-        val cmdJob = executorScope.launch(Dispatchers.Main) {
+        val cmdJob = executorScope.launch {
             val msg = if (handleCmdErrors) {
                 try {
                     callComponent(cmdDispatcher, cmd)
@@ -67,7 +67,7 @@ class CoroutinesCommandExecutor(
             } else {
                 callComponent(cmdDispatcher, cmd)
             }
-            withContext(Dispatchers.Main) {
+            withContext(outputDispatcher) {
                 messageConsumer.accept(msg)
             }
         }

@@ -82,6 +82,7 @@ class Program<S : State> internal constructor(
     private fun init(initialState: S, sub: Sub<S>?) {
         this.state = initialState
         this.sub = sub
+        this.sub?.setMessageConsumer(this)
     }
 
     fun runCycle() {

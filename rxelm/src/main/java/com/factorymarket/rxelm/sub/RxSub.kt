@@ -69,6 +69,7 @@ class RxSub<S : State>(private val outputScheduler : Scheduler) : Sub<S> {
         while (sub != null) {
             val disposable = sub
                 .observeOn(outputScheduler)
+                    //TODO: add error handler
                 .subscribe { msg ->
                     messageConsumer?.accept(msg)
                 }

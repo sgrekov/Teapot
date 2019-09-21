@@ -60,10 +60,8 @@ class ProgramBuilder {
     }
 
     fun <S : State> build(update: Update1<S>, effectHandler: RxEffectHandler): Program<S> {
-        if (outputScheduler == null) {
-            throw IllegalArgumentException("Output Scheduler must be provided!")
-        }
-        val commandExecutor = RxCommandExecutor(effectHandler, "", handleCmdErrors, outputScheduler!!, logger)
+        val dispatcher = outputScheduler ?: throw IllegalArgumentException("Output Scheduler must be provided!")
+        val commandExecutor = RxCommandExecutor(effectHandler, "", handleCmdErrors, dispatcher, logger)
         val program = Program(update, logger, middlewares)
         program.addCommandExecutor(commandExecutor)
         return program
