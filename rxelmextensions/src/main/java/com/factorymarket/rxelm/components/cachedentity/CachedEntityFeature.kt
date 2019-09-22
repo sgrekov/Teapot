@@ -10,7 +10,7 @@ class CachedEntityFeature<T, FETCH_PARAMS>(
     private val params: FETCH_PARAMS,
     private val commandHandler: CachedEntityCommandHandler<T, FETCH_PARAMS>,
     private val namespace: String = ""
-) : PluginUpdate<CachedEntityState<T, FETCH_PARAMS>>, RxEffectHandler {
+) : PluggableFeature<CachedEntityState<T, FETCH_PARAMS>>, RxEffectHandler {
 
     override fun handlesMessage(msg: Msg): Boolean = msg is CachedEntityMsg && msg.namespace == namespace
 

@@ -40,3 +40,8 @@ class RxPagingFeature<T, FETCH_PARAMS>(
     }
 
 }
+
+interface RxPagingCommandsHandler<T, PARAMS> {
+
+    fun fetchPage(page: Int, params: PARAMS?): Single<PagingResult<T>>
+}

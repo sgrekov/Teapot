@@ -3,19 +3,16 @@ package com.factorymarket.rxelm.components.paging
 import com.factorymarket.rxelm.cmd.BatchCmd
 import com.factorymarket.rxelm.cmd.CancelCmd
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.contract.*
-import com.factorymarket.rxelm.msg.Idle
+import com.factorymarket.rxelm.contract.PluggableFeature
+import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.msg.Msg
-import com.factorymarket.rxelm.statelessEffect
-import io.reactivex.Single
-
 
 
 abstract class PagingFeature<T, FETCH_PARAMS>(
         protected val fetchParams: FETCH_PARAMS?,
         protected val errorLogger: ErrorLogger? = null,
         protected val namespace: String = ""
-) : PluginUpdate<PagingState<T, FETCH_PARAMS>> {
+) : PluggableFeature<PagingState<T, FETCH_PARAMS>> {
 
 
     override fun initialState(): PagingState<T, FETCH_PARAMS> {

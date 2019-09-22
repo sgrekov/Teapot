@@ -39,7 +39,7 @@ class CachedPagingFeature<T, FETCH_PARAMS>(
     private val params: FETCH_PARAMS,
     private val pageSize: Int,
     private val errorLogger: ErrorLogger? = null
-) : PluginUpdate<CachedPagingState<T, FETCH_PARAMS>>, RxEffectHandler {
+) : PluggableFeature<CachedPagingState<T, FETCH_PARAMS>>, RxEffectHandler {
 
     private val messages = listOf(
         CachedPagingStartMsg::class,

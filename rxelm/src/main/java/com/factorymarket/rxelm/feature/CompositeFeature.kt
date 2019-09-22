@@ -11,10 +11,10 @@ import com.factorymarket.rxelm.sub.Sub
 
 abstract class CompositeFeature<S : State>(
         protected var renderer: Renderable<S>
-) : Update1<S>, Renderable<S> {
+) : Upd<S>, Renderable<S> {
 
     protected val components: MutableList<
-            Triple<PluginUpdate<State>, ((mainState: S) -> State)?, ((subState: State, mainState: S) -> S)?>> =
+            Triple<PluggableFeature<State>, ((mainState: S) -> State)?, ((subState: State, mainState: S) -> S)?>> =
             mutableListOf()
 
     protected val program: Program<S> by lazy(LazyThreadSafetyMode.NONE) { buildProgram() }
@@ -50,7 +50,7 @@ abstract class CompositeFeature<S : State>(
 
     @Suppress("UNCHECKED_CAST", "UnsafeCast")
     fun <SS : State> addComponent(
-            component: PluginUpdate<SS>,
+            component: PluggableFeature<SS>,
             toSubStateFun: (mainState: S) -> SS,
             toMainStateFun: (subState: SS, mainState: S) -> S
     ) {
@@ -59,18 +59,18 @@ abstract class CompositeFeature<S : State>(
                         component,
                         toSubStateFun,
                         toMainStateFun
-                ) as Triple<PluginUpdate<State>, (mainState: S) -> State, (subState: State, mainState: S) -> S>
+                ) as Triple<PluggableFeature<State>, (mainState: S) -> State, (subState: State, mainState: S) -> S>
         )
     }
 
     @Suppress("UNCHECKED_CAST", "UnsafeCast")
-    fun addMainComponent(component: PluginUpdate<S>) {
+    fun addMainComponent(component: PluggableFeature<S>) {
         components.add(
                 Triple(
                         component,
                         null,
                         null
-                ) as Triple<PluginUpdate<State>, ((mainState: S) -> State)?, ((subState: State, mainState: S) -> S)?>
+                ) as Triple<PluggableFeature<State>, ((mainState: S) -> State)?, ((subState: State, mainState: S) -> S)?>
         )
     }
 

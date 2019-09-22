@@ -5,7 +5,7 @@ import com.factorymarket.rxelm.cmd.CancelByClassCmd
 import com.factorymarket.rxelm.cmd.Cmd
 import com.factorymarket.rxelm.cmd.ProxyCmd
 import com.factorymarket.rxelm.components.paging.*
-import com.factorymarket.rxelm.contract.PluginUpdate
+import com.factorymarket.rxelm.contract.PluggableFeature
 import com.factorymarket.rxelm.contract.Renderable
 import com.factorymarket.rxelm.contract.Update
 import com.factorymarket.rxelm.feature.CoroutineCompositeFeature
@@ -29,7 +29,7 @@ class MainPresenter @Inject constructor(
         programBuilder: ProgramBuilder,
         private val service: RepoService,
         private val navigator: Navigator
-) : PluginUpdate<MainState>, Renderable<MainState>, CoPagingCommandsHandler<Repository, String>, Paginate.Callbacks {
+) : PluggableFeature<MainState>, Renderable<MainState>, CoPagingCommandsHandler<Repository, String>, Paginate.Callbacks {
 
     private val program: CoroutineCompositeFeature<MainState> = CoroutineCompositeFeature(programBuilder, this)
     private val pagingFeature = CoPagingFeature(this, service.getUserName())
@@ -39,7 +39,6 @@ class MainPresenter @Inject constructor(
     }
 
     fun flow1(): Flow<Msg> = flow {
-        println("Flow1 started")
         for (i in 1..5) {
             delay(1000)
             emit(SubMsg(i * 1000))
@@ -47,7 +46,6 @@ class MainPresenter @Inject constructor(
     }
 
     fun flow2(): Flow<Msg> = flow {
-        println("Flow2 started")
         for (i in 1..5) {
             delay(1000)
             emit(Sub2Msg(i * -1000))

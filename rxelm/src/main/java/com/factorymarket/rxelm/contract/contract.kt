@@ -14,7 +14,7 @@ open class State
  * and transform messages [Msg] into new state [State] and emits side effects[Cmd]
  */
 
-interface Update1<S : State> {
+interface Upd<S : State> {
     /**
      * Pure function, returns a pair of [State] and Command[Cmd]
      * @param msg a message (event) which comes from outer world (eg user, system, network etc)

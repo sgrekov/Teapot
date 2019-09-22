@@ -9,7 +9,6 @@ import java.lang.IllegalArgumentException
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.effect.rx.RxCommandExecutor
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 
 class ProgramBuilder {
 
@@ -59,7 +58,7 @@ class ProgramBuilder {
         return build(feature, feature)
     }
 
-    fun <S : State> build(update: Update1<S>, effectHandler: RxEffectHandler): Program<S> {
+    fun <S : State> build(update: Upd<S>, effectHandler: RxEffectHandler): Program<S> {
         val dispatcher = outputScheduler ?: throw IllegalArgumentException("Output Scheduler must be provided!")
         val commandExecutor = RxCommandExecutor(effectHandler, "", handleCmdErrors, dispatcher, logger)
         val program = Program(update, logger, middlewares)
@@ -71,10 +70,10 @@ class ProgramBuilder {
         return build(feature, feature)
     }
 
-    fun <S : State> build(update1: Update1<S>, effectHandler: CoroutinesEffectHandler): Program<S> {
+    fun <S : State> build(upd: Upd<S>, effectHandler: CoroutinesEffectHandler): Program<S> {
         val dispatcher = outputDispatcher ?: throw IllegalArgumentException("Output Dispatcher must be provided!")
         val commandExecutor = CoroutinesCommandExecutor(effectHandler, dispatcher, "", handleCmdErrors, logger)
-        val program = Program(update1, logger, middlewares)
+        val program = Program(upd, logger, middlewares)
         program.addCommandExecutor(commandExecutor)
         return program
     }

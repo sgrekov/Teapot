@@ -49,7 +49,7 @@ import java.util.ArrayDeque
  * @param outputScheduler the scheduler to [observe on][Observable.observeOn]
  */
 class Program<S : State> internal constructor(
-        private val feature: Update1<S>,
+        private val feature: Upd<S>,
         private val logger: RxElmLogger?,
         private val middlewares: List<Middleware>) : MessageConsumer {
 
@@ -142,7 +142,7 @@ class Program<S : State> internal constructor(
 
     fun isRendering(): Boolean = isRendering
 
-    private fun update(msg: Msg, feature: Update1<S>, logger: RxElmLogger?): Update<S> {
+    private fun update(msg: Msg, feature: Upd<S>, logger: RxElmLogger?): Update<S> {
         logUpdate(logger, msg)
 
         val updateResult = if (msg is ProxyMsg) {

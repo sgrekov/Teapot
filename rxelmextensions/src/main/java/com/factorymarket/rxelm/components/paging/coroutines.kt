@@ -50,3 +50,8 @@ class CoPagingFeature<T, FETCH_PARAMS>(
     }
 
 }
+
+interface CoPagingCommandsHandler<T, PARAMS> {
+
+    suspend fun fetchPage(page: Int, params: PARAMS?): PagingResult<T>
+}
