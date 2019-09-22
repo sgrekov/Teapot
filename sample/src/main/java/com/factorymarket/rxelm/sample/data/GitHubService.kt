@@ -9,6 +9,7 @@ import org.eclipse.egit.github.core.client.GitHubClient
 import org.eclipse.egit.github.core.service.RepositoryService
 import org.eclipse.egit.github.core.service.StargazerService
 import org.eclipse.egit.github.core.service.UserService
+import timber.log.Timber
 
 class GitHubService(private val scheduler: Scheduler) : RepoService {
 
@@ -46,7 +47,7 @@ class GitHubService(private val scheduler: Scheduler) : RepoService {
 
     override suspend fun getStarredRepos2(userName: String?, page: Int): PagingResult<Repository> {
         val stargazerService = StargazerService(client)
-        val iterator = stargazerService.pageStarred((page - 1) * PAGE_SIZE, PAGE_SIZE)
+        val iterator = stargazerService.pageStarred(page , PAGE_SIZE)
         val items = iterator.next().toList()
         return PagingResult(items, iterator.lastPage, iterator.lastPage * PAGE_SIZE)
     }

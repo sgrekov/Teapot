@@ -31,7 +31,6 @@ class FlowSub<S : State>(dispatcher: CoroutineDispatcher) : Sub<S>, CoroutineSco
      */
     @InternalCoroutinesApi
     override fun subscribe(state: S) {
-        println("subscribe")
         moveConditionalSubsToSubsIfTheyMatchPredicate(state)
 
         if (subs.isEmpty()) {
