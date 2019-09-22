@@ -1,13 +1,13 @@
 package com.factorymarket.rxelm.effect.rx
 
-import com.factorymarket.rxelm.cmd.*
+import com.factorymarket.rxelm.cmd.Cmd
+import com.factorymarket.rxelm.cmd.SwitchCmd
 import com.factorymarket.rxelm.contract.RxEffectHandler
-import com.factorymarket.rxelm.contract.RxFeature
-import com.factorymarket.rxelm.contract.State
+import com.factorymarket.rxelm.effect.BaseCommandExecutor
+import com.factorymarket.rxelm.effect.RunningEffect
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.msg.Msg
-import com.factorymarket.rxelm.program.MessageConsumer
 import com.jakewharton.rxrelay2.BehaviorRelay
 import com.jakewharton.rxrelay2.Relay
 import io.reactivex.Observable
@@ -16,54 +16,24 @@ import io.reactivex.Single
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
-import java.util.*
-import kotlin.collections.HashMap
 
 class RxCommandExecutor(
         private val component: RxEffectHandler,
-        private val logTag : String,
+        logTag: String,
         private val handleCmdErrors: Boolean,
         private val outputScheduler: Scheduler,
-        private val logger: RxElmLogger?) : CommandExecutor {
+        logger: RxElmLogger?) : BaseCommandExecutor<RxRunningEffect>(logTag, logger) {
 
     /**
      * Since we can cancel commands by their class, we hold commands in map bags by the hashcode
      * of the class.
      */
-    private val commandsDisposablesMap: MutableMap<Int, MutableMap<Int, Disposable>> = TreeMap()
     private val switchRelayHolder: HashMap<String, Relay<SwitchCmd>> = HashMap()
     private var disposables: CompositeDisposable = CompositeDisposable()
-    lateinit var messageConsumer : MessageConsumer
 
-    override fun executeCmd(cmd: Cmd) {
-        when (cmd) {
-            is SwitchCmd -> {
-                val relay = getSwitchRelay(cmd)
-                relay.accept(cmd)
-            }
-            is CancelCmd -> {
-                val commandDisposablesMap = commandsDisposablesMap[cmd.cancelCmd::class.hashCode()]
-                        ?: return
-
-                val commandDisposables = commandDisposablesMap[cmd.cancelCmd.hashCode()]
-                if (commandDisposables != null && !commandDisposables.isDisposed) {
-                    logCmd("elm cancel cmd:${cmd.cancelCmd}")
-                    commandDisposables.dispose()
-                }
-            }
-            is CancelByClassCmd<*> -> {
-                val commandDisposablesMap = commandsDisposablesMap[cmd.cmdClass.hashCode()]
-                        ?: return
-                commandDisposablesMap.values.forEach { disposable ->
-                    if (!disposable.isDisposed) {
-                        logCmd("elm cancel cmd:${cmd.cmdClass}")
-                        disposable.dispose()
-                    }
-                }
-            }
-            is ProxyCmd -> messageConsumer.accept(cmd.msg)
-            else -> handleCmd(cmd)
-        }
+    override fun handleSwitchCmd(cmd: SwitchCmd) {
+        val relay = getSwitchRelay(cmd)
+        relay.accept(cmd)
     }
 
     private fun handleResponse(observable: Observable<Msg>): Disposable {
@@ -74,24 +44,12 @@ class RxCommandExecutor(
                 }
     }
 
-
-    private fun handleCmd(cmd: Cmd) {
+    override fun handleCmd(cmd: Cmd) {
         logCmd("elm call cmd:$cmd")
 
         val cmdObservable = cmdCall(cmd).subscribeOn(Schedulers.io())
         val disposable = handleResponse(cmdObservable)
-        val cmdDisposablesMap = commandsDisposablesMap[cmd::class.hashCode()]
-        if (cmdDisposablesMap != null) {
-            val oldDisposable = cmdDisposablesMap[cmd.hashCode()]
-            if (oldDisposable != null && !oldDisposable.isDisposed) {
-                disposables.add(oldDisposable)
-            }
-            cmdDisposablesMap[cmd.hashCode()] = disposable
-        } else {
-            val disposablesMap = TreeMap<Int, Disposable>()
-            disposablesMap[cmd.hashCode()] = disposable
-            commandsDisposablesMap[cmd::class.hashCode()] = disposablesMap
-        }
+        saveRunningEffect(cmd, RxRunningEffect(disposable))
     }
 
     private fun getSwitchRelay(cmd: SwitchCmd): Relay<SwitchCmd> {
@@ -105,24 +63,22 @@ class RxCommandExecutor(
         return relay
     }
 
-    private fun logCmd(message: String) {
-        logger?.takeIf { it.logType().needToShowCommands() }?.log(logTag, message)
-    }
-
     private fun subscribeSwitchRelay(relay: BehaviorRelay<SwitchCmd>) {
-        val switchDisposable = handleResponse(relay.switchMap { cmd ->
-            logCmd("elm call cmd: $cmd")
+        val switchDisposable = handleResponse(
+                relay.switchMap { cmd ->
+                    logCmd("elm call cmd: $cmd")
 
-            cmdCall(cmd).subscribeOn(Schedulers.io()).doOnDispose {
-                logCmd("elm dispose cmd:$cmd")
-            }
-        })
+                    cmdCall(cmd)
+                            .subscribeOn(Schedulers.io())
+                            .doOnDispose {
+                                logCmd("elm dispose cmd:$cmd")
+                            }
+                })
 
         disposables.add(switchDisposable)
     }
 
     private fun cmdCall(cmd: Cmd): Observable<Msg> {
-
         return if (handleCmdErrors) {
             component.call(cmd)
                     .onErrorResumeNext { err ->
@@ -136,18 +92,23 @@ class RxCommandExecutor(
         }
     }
 
-    override fun stop() {
-        commandsDisposablesMap.values.forEach {
-            it.values.forEach { disposable ->
-                if (!disposable.isDisposed) {
-                    disposable.dispose()
-                }
-            }
-        }
+    override fun saveOldEffect(oldDisposable: RxRunningEffect) {
+        disposables.add(oldDisposable.disposable)
     }
 
-    override fun addMessageConsumer(mc: MessageConsumer) {
-        messageConsumer = mc
+    override fun stop() {
+        super.stop()
+        disposables.clear()
     }
+
+}
+
+class RxRunningEffect(val disposable: Disposable) : RunningEffect() {
+
+    override fun cancel() {
+        disposable.dispose()
+    }
+
+    override fun isRunning(): Boolean = !disposable.isDisposed
 
 }

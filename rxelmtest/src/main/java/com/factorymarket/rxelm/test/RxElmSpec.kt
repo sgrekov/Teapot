@@ -2,15 +2,14 @@ package com.factorymarket.rxelm.test
 
 import com.factorymarket.rxelm.cmd.BatchCmd
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.contract.Feature
-import com.factorymarket.rxelm.contract.Effect
 import com.factorymarket.rxelm.contract.State
+import com.factorymarket.rxelm.contract.Upd
 import com.factorymarket.rxelm.msg.Msg
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 
 
-class RxElmSpec<S : State> constructor(val feature: Feature<S, Effect>) {
+class RxElmSpec<S : State> constructor(val feature: Upd<S>) {
 
     private lateinit var state: S
     private var prevState: S? = null
