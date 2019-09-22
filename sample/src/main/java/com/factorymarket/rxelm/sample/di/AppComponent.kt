@@ -15,6 +15,7 @@ import dagger.BindsInstance
 import dagger.Component
 import dagger.Module
 import dagger.Provides
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.Dispatchers
 import timber.log.Timber
@@ -54,7 +55,7 @@ interface AppComponent {
         @Singleton
         fun programBuilder(): ProgramBuilder {
             return ProgramBuilder()
-//                .outputScheduler(AndroidSchedulers.mainThread())
+                .outputScheduler(AndroidSchedulers.mainThread())
                 .outputDispatcher(Dispatchers.Main)
                 .handleCmdErrors(true)
                 .logger(object : RxElmLogger {

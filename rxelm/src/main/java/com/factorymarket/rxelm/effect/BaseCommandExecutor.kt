@@ -26,7 +26,18 @@ abstract class BaseCommandExecutor<T : RunningEffect>(
 
     override fun executeCmd(cmd: Cmd) {
         when (cmd) {
-            is SwitchCmd -> handleSwitchCmd(cmd)
+            is SwitchCmd -> {
+                val cmdDisposablesMap = runningEffectsHolder[cmd::class.hashCode()]
+                if (cmdDisposablesMap != null) {
+                    cmdDisposablesMap.values.forEach {
+                        if (it.isRunning()){
+                            it.cancel()
+                        }
+                    }
+                    cmdDisposablesMap.clear()
+                }
+                handleCmd(cmd)
+            }
             is CancelCmd -> {
                 val runningEffectMap = runningEffectsHolder[cmd.cancelCmd::class.hashCode()]
                         ?: return
@@ -51,8 +62,6 @@ abstract class BaseCommandExecutor<T : RunningEffect>(
             else -> handleCmd(cmd)
         }
     }
-
-    abstract fun handleSwitchCmd(cmd: SwitchCmd)
 
     abstract fun handleCmd(cmd: Cmd)
 

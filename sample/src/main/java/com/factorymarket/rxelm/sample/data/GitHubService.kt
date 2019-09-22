@@ -38,10 +38,12 @@ class GitHubService(private val scheduler: Scheduler) : RepoService {
     }
 
 
-    override fun getStarredRepos(userName: String): Single<List<Repository>> {
+    override fun getStarredRepos(userName: String, page: Int): Single<PagingResult<Repository>> {
         return Single.fromCallable {
             val stargazerService = StargazerService(client)
-            stargazerService.starred
+            val iterator = stargazerService.pageStarred(page , PAGE_SIZE)
+            val items = iterator.next().toList()
+            return@fromCallable PagingResult(items, iterator.lastPage, iterator.lastPage * PAGE_SIZE)
         }.subscribeOn(scheduler)
     }
 

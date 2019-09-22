@@ -1,7 +1,6 @@
 package com.factorymarket.rxelm.effect.coroutine
 
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.cmd.SwitchCmd
 import com.factorymarket.rxelm.cmd.ViewCmd
 import com.factorymarket.rxelm.contract.CoroutinesEffectHandler
 import com.factorymarket.rxelm.effect.BaseCommandExecutor
@@ -30,10 +29,6 @@ class CoroutinesCommandExecutor(
 
     private val parentJob = SupervisorJob()
     private val executorScope = CoroutineScope(parentJob)
-
-    override fun handleSwitchCmd(cmd: SwitchCmd) {
-
-    }
 
     override fun handleCmd(cmd: Cmd) {
         val cmdDispatcher = if (cmd is ViewCmd) outputDispatcher else Dispatchers.IO
