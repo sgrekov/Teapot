@@ -16,17 +16,17 @@ import com.factorymarket.rxelm.sample.data.RepoService
 import com.factorymarket.rxelm.sample.main.model.*
 import com.factorymarket.rxelm.sample.main.view.IMainView
 import com.factorymarket.rxelm.sample.navigation.Navigator
-import com.factorymarket.rxelm.sub.FlowSub
 import com.paginate.Paginate
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import org.eclipse.egit.github.core.Repository
 import timber.log.Timber
 import javax.inject.Inject
 
 class MainPresenter @Inject constructor(
         val view: IMainView,
-        programBuilder: ProgramBuilder,
+        val programBuilder: ProgramBuilder,
         private val service: RepoService,
         private val navigator: Navigator
 ) : PluggableFeature<MainState>, Renderable<MainState>, CoPagingCommandsHandler<Repository, String>, Paginate.Callbacks {
@@ -63,7 +63,7 @@ class MainPresenter @Inject constructor(
         program.run(
                 initialState = restoredState ?: initialState(),
                 initialMsg = PagingStartMsg(),
-                sub = FlowSub<MainState>(Dispatchers.Main)
+                sub = programBuilder.buildFLowSub<MainState>()
                         .addMessageFlow(flow1)
                         .addConditionalMessageObservable({ state -> state.reposList.items.isNotEmpty() }, flow2)
         )

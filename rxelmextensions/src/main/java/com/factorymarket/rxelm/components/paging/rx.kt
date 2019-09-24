@@ -8,7 +8,7 @@ import io.reactivex.Single
 
 class RxPagingFeature<T, FETCH_PARAMS>(
         private val cmdHandlerPaging: RxPagingCommandsHandler<T, FETCH_PARAMS>,
-        fetchParams: FETCH_PARAMS,
+        fetchParams: FETCH_PARAMS?,
         errorLogger: ErrorLogger? = null,
         namespace: String = ""
 ) : PagingFeature<T, FETCH_PARAMS>(fetchParams, errorLogger, namespace), RxEffectHandler {

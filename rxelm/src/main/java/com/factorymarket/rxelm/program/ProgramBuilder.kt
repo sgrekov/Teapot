@@ -8,6 +8,8 @@ import io.reactivex.Scheduler
 import java.lang.IllegalArgumentException
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.effect.rx.RxCommandExecutor
+import com.factorymarket.rxelm.sub.FlowSub
+import com.factorymarket.rxelm.sub.RxSub
 import kotlinx.coroutines.CoroutineDispatcher
 
 class ProgramBuilder {
@@ -54,13 +56,23 @@ class ProgramBuilder {
         return this
     }
 
+    fun <S : State> buildRxSub() : RxSub<S> {
+        val scheduler = outputScheduler ?: throw IllegalArgumentException("Output Scheduler must be provided!")
+        return RxSub(scheduler)
+    }
+
+    fun <S : State> buildFLowSub() : FlowSub<S> {
+        val dispatcher = outputDispatcher ?: throw IllegalArgumentException("Output Dispatcher must be provided!")
+        return FlowSub(dispatcher)
+    }
+
     fun <S : State> build(feature: RxFeature<S>): Program<S> {
         return build(feature, feature)
     }
 
     fun <S : State> build(update: Upd<S>, effectHandler: RxEffectHandler): Program<S> {
-        val dispatcher = outputScheduler ?: throw IllegalArgumentException("Output Scheduler must be provided!")
-        val commandExecutor = RxCommandExecutor(effectHandler, "", handleCmdErrors, dispatcher, logger)
+        val scheduler = outputScheduler ?: throw IllegalArgumentException("Output Scheduler must be provided!")
+        val commandExecutor = RxCommandExecutor(effectHandler, "", handleCmdErrors, scheduler, logger)
         val program = Program(update, logger, middlewares)
         program.addCommandExecutor(commandExecutor)
         return program

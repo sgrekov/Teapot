@@ -7,7 +7,7 @@ import com.factorymarket.rxelm.msg.Msg
 
 class CoPagingFeature<T, FETCH_PARAMS>(
         private val cmdHandlerPaging: CoPagingCommandsHandler<T, FETCH_PARAMS>,
-        fetchParams: FETCH_PARAMS,
+        fetchParams: FETCH_PARAMS?,
         errorLogger: ErrorLogger? = null,
         namespace: String = ""
 ) : PagingFeature<T, FETCH_PARAMS>(fetchParams, errorLogger, namespace), CoroutinesEffectHandler {
