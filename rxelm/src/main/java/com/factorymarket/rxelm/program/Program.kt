@@ -18,11 +18,9 @@ import java.util.ArrayDeque
  *
  * All interactions happen in cycle:
  *
- * [Msg]
- * -> update(Message, State)[Feature.update] : [Pair]<[State], [Cmd]>
- * -> (Optional)render(State)[Feature.render]
- * -> call(Command)[Feature.call]
- * -> [Msg].
+ * -> update(Message, State)[Program.update] : [Update]<[State], [Cmd]>
+ * -> (Optional)render(State)[Program.render]
+ * -> call(Command)[CommandExecutor.executeCmd]
  *
  *
  * Messages are being passed to [Program] using [accept(Message)][accept] method.
