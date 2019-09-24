@@ -1,11 +1,9 @@
 package com.factorymarket.rxelm
 
 import com.factorymarket.rxelm.cmd.Cmd
-import com.factorymarket.rxelm.component.CompositeComponent
-import com.factorymarket.rxelm.contract.PluginComponent
-import com.factorymarket.rxelm.contract.Renderable
-import com.factorymarket.rxelm.contract.State
-import com.factorymarket.rxelm.contract.Update
+import com.factorymarket.rxelm.contract.*
+import com.factorymarket.rxelm.feature.CompositeFeature
+import com.factorymarket.rxelm.feature.RxCompositeFeature
 import com.factorymarket.rxelm.msg.Idle
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.program.ProgramBuilder
@@ -23,7 +21,7 @@ class CompositeComponentTest {
     object Comp1Msg2 : Msg()
     data class Comp1Cmd(val foo: String) : Cmd()
 
-    class Component1 : PluginComponent<Comp1State> {
+    class Feature1 : PluggableFeature<Comp1State>, RxEffectHandler {
         override fun handlesMessage(msg: Msg): Boolean = msg is Comp1Msg
 
         override fun handlesCommands(cmd: Cmd): Boolean = cmd is Comp1Cmd
@@ -41,14 +39,14 @@ class CompositeComponentTest {
         }
     }
 
-    val component1 = Component1()
+    val component1 = Feature1()
 
     data class MainState(val bar: String, val comp1State: Comp1State) : State()
 
     data class MainMsg1(val bar: String) : Msg()
     data class MainCmd1(val bar: String) : Cmd()
 
-    class MainComponent(val component1: Component1) : PluginComponent<MainState>, Renderable<MainState> {
+    class MainComponent(val feature1: Feature1) : PluggableFeature<MainState>, Renderable<MainState>, RxEffectHandler {
 
         override fun render(state: MainState) {}
 
@@ -56,7 +54,7 @@ class CompositeComponentTest {
 
         override fun handlesCommands(cmd: Cmd): Boolean = true
 
-        override fun initialState(): MainState = MainState(bar = "initialBar", comp1State = component1.initialState())
+        override fun initialState(): MainState = MainState(bar = "initialBar", comp1State = feature1.initialState())
 
         override fun update(msg: Msg, state: MainState): Update<MainState> = when (msg) {
             is MainMsg1 -> Update.state(state.copy(bar = msg.bar))
@@ -70,12 +68,12 @@ class CompositeComponentTest {
     }
 
     lateinit var mainComp : MainComponent
-    lateinit var compositeComponent : CompositeComponent<MainState>
+    lateinit var compositeComponent : CompositeFeature<MainState>
 
     @Before
     fun setUp() {
         mainComp = MainComponent(component1)
-        compositeComponent = CompositeComponent(ProgramBuilder().outputScheduler(Schedulers.trampoline()), mainComp)
+        compositeComponent = RxCompositeFeature(ProgramBuilder().outputScheduler(Schedulers.trampoline()), mainComp)
 
         compositeComponent.addComponent(
                 component1,

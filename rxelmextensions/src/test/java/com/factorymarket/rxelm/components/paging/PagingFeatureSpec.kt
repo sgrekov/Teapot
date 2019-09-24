@@ -16,7 +16,7 @@ class PagingFeatureSpec : DescribeSpec({
     describe("paging process without cache") {
 
         val pagingComponent: PagingFeature<String, Unit> =
-            PagingFeature(object : PagingCommandsHandler<String, Unit> {
+            RxPagingFeature(object : RxPagingCommandsHandler<String, Unit> {
 
                 override fun fetchPage(page: Int, params: Unit?): Single<PagingResult<String>> {
                     return Single.just(PagingResult(listOf(), 4))
@@ -35,7 +35,7 @@ class PagingFeatureSpec : DescribeSpec({
                         PagingRefreshItemsCmd(params = Unit)
                     )
                     .checkState {
-                        assertTrue { it.isFullscreenSpinnerVisible }
+                        assertTrue { it.isFullscreenLoaderVisible }
                         assertTrue { it.isStarted }
                         assertFalse { it.isListVisible }
                         assertEquals(2, it.nextPage)
@@ -50,9 +50,9 @@ class PagingFeatureSpec : DescribeSpec({
                     onePageSpec.whenMsg(PagingErrorMsg(UnknownHostException(), PagingRefreshItemsCmd(Unit)))
                         .checkState {
                             assertFalse { it.isListVisible }
-                            assertFalse { it.isRefreshingEnabled }
+                            assertFalse { it.isSwipeRefreshEnabled }
                             assertFalse { it.hasSpinner }
-                            assertFalse { it.isFullscreenSpinnerVisible }
+                            assertFalse { it.isFullscreenLoaderVisible }
                             assertEquals(1, it.nextPage)
                             assertEquals(false, it.isPageLoading)
                             assertNull(it.totalPages)
@@ -68,9 +68,9 @@ class PagingFeatureSpec : DescribeSpec({
                     onePageSpec.whenMsg(PagingOnLoadedItemsMsg(getItems(), 1, 1))
                         .checkState {
                             assertTrue { it.isListVisible }
-                            assertTrue { it.isRefreshingEnabled }
+                            assertTrue { it.isSwipeRefreshEnabled }
                             assertFalse { it.hasSpinner }
-                            assertFalse { it.isFullscreenSpinnerVisible }
+                            assertFalse { it.isFullscreenLoaderVisible }
                             assertEquals(2, it.nextPage)
                             assertEquals(false, it.isPageLoading)
                             assertEquals(1, it.totalPages)
@@ -85,7 +85,7 @@ class PagingFeatureSpec : DescribeSpec({
                         .checkState {
                             assertTrue { it.isListVisible }
                             assertTrue { it.hasSpinner }
-                            assertFalse { it.isFullscreenSpinnerVisible }
+                            assertFalse { it.isFullscreenLoaderVisible}
                             assertEquals(2, it.nextPage)
                             assertFalse { it.isPageLoading }
                             assertEquals(4, it.totalPages)
@@ -102,8 +102,8 @@ class PagingFeatureSpec : DescribeSpec({
                             PagingRefreshItemsCmd(params = Unit)
                         )
                         .checkState {
-                            assertTrue { it.isRefreshingEnabled }
-                            assertTrue { it.isRefreshingVisible }
+                            assertTrue { it.isSwipeRefreshEnabled}
+                            assertTrue { it.isSwipeRefreshVisible }
                             assertTrue { it.isListVisible }
                             assertEquals(2, it.nextPage)
                             assertTrue { it.isPageLoading }
@@ -257,7 +257,7 @@ class PagingFeatureSpec : DescribeSpec({
                         .whenMsg(PagingOnRetryAfterFullscreenErrorButtonClickMsg())
                         .thenCmd(PagingRefreshItemsCmd(Unit))
                         .checkState {
-                            assertTrue { it.isFullscreenSpinnerVisible }
+                            assertTrue { it.isFullscreenLoaderVisible }
                             assertFalse { it.isListVisible }
                             assertTrue { it.isPageLoading }
                         }

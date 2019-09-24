@@ -16,6 +16,7 @@ import com.factorymarket.rxelm.sample.login.view.ILoginView
 import com.factorymarket.rxelm.sample.navigation.Navigator
 import com.factorymarket.rxelm.test.RxElmSpec
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.Dispatchers
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.mock
@@ -34,7 +35,7 @@ class LoginPresenterTest {
         view = mock(ILoginView::class.java)
         loginService = mock(RepoService::class.java)
         prefs = mock(IAppPrefs::class.java)
-        programBuilder = ProgramBuilder().outputScheduler(Schedulers.trampoline())
+        programBuilder = ProgramBuilder().outputDispatcher(Dispatchers.Main)
         presenter = LoginPresenter(view, programBuilder, prefs, loginService, mock(Navigator::class.java))
         spec = RxElmSpec(presenter).withState(LoginState())
     }
