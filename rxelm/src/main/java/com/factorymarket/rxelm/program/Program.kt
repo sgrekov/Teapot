@@ -2,13 +2,10 @@ package com.factorymarket.rxelm.program
 
 import com.factorymarket.rxelm.cmd.*
 import com.factorymarket.rxelm.contract.*
-import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.log.LogType
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.middleware.Middleware
-import com.factorymarket.rxelm.msg.Idle
-import com.factorymarket.rxelm.msg.Init
-import com.factorymarket.rxelm.msg.ProxyMsg
+import com.factorymarket.rxelm.msg.*
 import com.factorymarket.rxelm.sub.Sub
 import java.util.ArrayDeque
 
@@ -157,6 +154,9 @@ class Program<S : State> internal constructor(
     private fun logUpdate(logger: RxElmLogger?, msg: Msg) {
         logger?.takeIf { it.logType().needToShowUpdates() }
                 ?.log(this.state.javaClass.simpleName, "update with msg:${msg.javaClass.simpleName} ")
+        if (msg is ErrorMsg){
+            logger?.error(this.state.javaClass.simpleName, msg.err)
+        }
     }
 
     private fun pickNextMessageFromQueue() {
