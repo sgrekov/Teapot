@@ -2,13 +2,12 @@ package com.factorymarket.rxelm.sub
 
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.contract.State
+import com.factorymarket.rxelm.ds.DoubleLinkedList
 import com.factorymarket.rxelm.program.MessageConsumer
 import com.factorymarket.rxelm.program.Program
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
-import java.util.LinkedList
-import java.util.Queue
 
 /**
  * Container for storing a collection of [Observables][Observable]
@@ -22,8 +21,8 @@ import java.util.Queue
  */
 class RxSub<S : State>(private val outputScheduler : Scheduler) : Sub<S> {
 
-    private val subs: Queue<Observable<out Msg>> = LinkedList()
-    private val conditionalSubs: Queue<Pair<(S) -> Boolean, Observable<out Msg>>> = LinkedList()
+    private val subs: DoubleLinkedList<Observable<out Msg>> = DoubleLinkedList()
+    private val conditionalSubs: DoubleLinkedList<Pair<(S) -> Boolean, Observable<out Msg>>> = DoubleLinkedList()
     private val compositeDisposable: CompositeDisposable = CompositeDisposable()
     private var messageConsumer : MessageConsumer? = null
 
@@ -32,7 +31,7 @@ class RxSub<S : State>(private val outputScheduler : Scheduler) : Sub<S> {
      * to [Program's accept(Message)][Program.accept] method
      */
     fun addMessageObservable(observable: Observable<out Msg>): RxSub<S> {
-        subs.add(observable)
+        subs.addLast(observable)
         return this
     }
 
@@ -43,7 +42,7 @@ class RxSub<S : State>(private val outputScheduler : Scheduler) : Sub<S> {
         predicate: (S) -> Boolean,
         observable: Observable<out Msg>
     ): RxSub<S> {
-        conditionalSubs.add(predicate to observable)
+        conditionalSubs.addLast(predicate to observable)
         return this
     }
 
@@ -53,7 +52,6 @@ class RxSub<S : State>(private val outputScheduler : Scheduler) : Sub<S> {
 
     /**
      * Subscribe all data sources to [Program.accept(Message)][Program.accept]
-     *
      *
      * Checks if conditional data sources' predicate is true.
      *
@@ -65,7 +63,7 @@ class RxSub<S : State>(private val outputScheduler : Scheduler) : Sub<S> {
         if (subs.isEmpty()) {
             return
         }
-        var sub = subs.poll()
+        var sub : Observable<out Msg>? = subs.last()
         while (sub != null) {
             val disposable = sub
                 .observeOn(outputScheduler)
@@ -74,7 +72,8 @@ class RxSub<S : State>(private val outputScheduler : Scheduler) : Sub<S> {
                     messageConsumer?.accept(msg)
                 }
             compositeDisposable.add(disposable)
-            sub = subs.poll()
+            subs.removeLast()
+            sub = if (!subs.isEmpty()) subs.last() else null
         }
     }
 
@@ -97,7 +96,7 @@ class RxSub<S : State>(private val outputScheduler : Scheduler) : Sub<S> {
             val delayedSub = iter.next()
             if (delayedSub.first.invoke(state)) {
                 iter.remove()
-                subs.add(delayedSub.second)
+                subs.addLast(delayedSub.second)
             }
         }
     }

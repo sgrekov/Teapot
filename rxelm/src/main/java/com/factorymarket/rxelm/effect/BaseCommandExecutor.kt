@@ -3,7 +3,6 @@ package com.factorymarket.rxelm.effect
 import com.factorymarket.rxelm.cmd.*
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.program.MessageConsumer
-import java.util.*
 
 abstract class RunningEffect {
 
@@ -21,7 +20,7 @@ abstract class BaseCommandExecutor<T : RunningEffect>(
      * Since we can cancel commands by their class, we hold commands in map bags by the hashcode
      * of the class.
      */
-    val runningEffectsHolder: MutableMap<Int, MutableMap<Int, T>> = TreeMap()
+    val runningEffectsHolder: MutableMap<Int, MutableMap<Int, T>> = mutableMapOf()
     lateinit var messageConsumer : MessageConsumer
 
     override fun executeCmd(cmd: Cmd) {
@@ -88,7 +87,7 @@ abstract class BaseCommandExecutor<T : RunningEffect>(
             }
             cmdDisposablesMap[cmd.hashCode()] = runningEffect
         } else {
-            val disposablesMap = TreeMap<Int, T>()
+            val disposablesMap = mutableMapOf<Int, T>()
             disposablesMap[cmd.hashCode()] = runningEffect
             runningEffectsHolder[cmd::class.hashCode()] = disposablesMap
         }

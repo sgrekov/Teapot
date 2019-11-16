@@ -56,10 +56,10 @@ class MainPresenter @Inject constructor(
         val flow1 = flow1()
         val flow2 = flow2()
 
-        program.addComponent(pagingFeature,
+        program.addFeature(pagingFeature,
                 { mainState -> mainState.reposList },
                 { repos, mainState -> mainState.copy(reposList = repos) })
-        program.addMainComponent(this)
+        program.setMainFeature(this)
         program.run(
                 initialState = restoredState ?: initialState(),
                 initialMsg = PagingStartMsg(),
@@ -71,11 +71,13 @@ class MainPresenter @Inject constructor(
 
     override fun update(msg: Msg, state: MainState): Update<MainState> {
         return when (msg) {
-            is CancelMsg -> Update.update(
-                    state.copy(
-                            isCanceled = true,
-                            reposList = state.reposList.toErrorState()),
-                    CancelByClassCmd(cmdClass = PagingRefreshItemsCmd::class))
+            is CancelMsg -> if (state.reposList.isPageLoading) {
+                Update.update(
+                        state.copy(
+                                isCanceled = true,
+                                reposList = state.reposList.toErrorState()),
+                        CancelByClassCmd(cmdClass = PagingRefreshItemsCmd::class))
+            } else Update.idle()
             is RefreshMsg -> Update.update(state.copy(isCanceled = false), ProxyCmd(PagingStartMsg()))
             is PagingErrorMsg -> {
                 Timber.e(msg.err)
@@ -109,6 +111,7 @@ class MainPresenter @Inject constructor(
                     view.hideProgress()
                     view.setErrorText(if (state.isCanceled) "Request is canceled" else "User has no starred repos")
                     view.showErrorText(true)
+                    view.setRepos(listOf())
                 }
                 else -> {
                     view.showErrorText(false)

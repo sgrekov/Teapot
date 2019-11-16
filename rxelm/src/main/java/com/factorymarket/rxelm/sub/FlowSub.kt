@@ -1,21 +1,21 @@
 package com.factorymarket.rxelm.sub
 
 import com.factorymarket.rxelm.contract.State
+import com.factorymarket.rxelm.ds.DoubleLinkedList
 import com.factorymarket.rxelm.msg.Msg
 import com.factorymarket.rxelm.program.MessageConsumer
 import com.factorymarket.rxelm.program.Program
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
-import java.util.*
 
 fun SubScope(dispatcher: CoroutineDispatcher): CoroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
 
 class FlowSub<S : State>(dispatcher: CoroutineDispatcher) : Sub<S>, CoroutineScope by SubScope(dispatcher) {
 
     private var messageConsumer: MessageConsumer? = null
-    private val subs: Queue<Flow<Msg>> = LinkedList()
-    private val conditionalSubs: Queue<Pair<(S) -> Boolean, Flow<Msg>>> = LinkedList()
+    private val subs: DoubleLinkedList<Flow<Msg>> = DoubleLinkedList()
+    private val conditionalSubs: DoubleLinkedList<Pair<(S) -> Boolean, Flow<Msg>>> = DoubleLinkedList()
 
     override fun setMessageConsumer(mc: MessageConsumer) {
         messageConsumer = mc
@@ -39,7 +39,7 @@ class FlowSub<S : State>(dispatcher: CoroutineDispatcher) : Sub<S>, CoroutineSco
 
         subs.forEach { flow ->
             launch {
-                flow?.collect {
+                flow.collect {
                     messageConsumer?.accept(it)
                 }
             }
@@ -56,7 +56,7 @@ class FlowSub<S : State>(dispatcher: CoroutineDispatcher) : Sub<S>, CoroutineSco
      * to [Program's accept(Message)][Program.accept] method
      */
     fun addMessageFlow(messageFlow: Flow<out Msg>): FlowSub<S> {
-        subs.add(messageFlow)
+        subs.addLast(messageFlow)
         return this
     }
 
@@ -67,7 +67,7 @@ class FlowSub<S : State>(dispatcher: CoroutineDispatcher) : Sub<S>, CoroutineSco
             predicate: (S) -> Boolean,
             flow: Flow<out Msg>
     ): FlowSub<S> {
-        conditionalSubs.add(predicate to flow)
+        conditionalSubs.addLast(predicate to flow)
         return this
     }
 
@@ -81,7 +81,7 @@ class FlowSub<S : State>(dispatcher: CoroutineDispatcher) : Sub<S>, CoroutineSco
             val delayedSub = iter.next()
             if (delayedSub.first.invoke(state)) {
                 iter.remove()
-                subs.add(delayedSub.second)
+                subs.addLast(delayedSub.second)
             }
         }
     }
