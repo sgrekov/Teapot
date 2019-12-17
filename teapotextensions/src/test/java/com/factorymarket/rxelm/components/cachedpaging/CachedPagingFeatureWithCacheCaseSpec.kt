@@ -1,7 +1,7 @@
 package com.factorymarket.rxelm.components.cachedpaging
 
 import com.factorymarket.rxelm.cmd.None
-import com.factorymarket.rxelm.test.RxElmSpec
+import com.factorymarket.rxelm.test.TeapotSpec
 import io.reactivex.Single
 import io.kotlintest.specs.DescribeSpec
 
@@ -23,7 +23,7 @@ class CachedPagingFeatureWithCacheCaseSpec : DescribeSpec({
                 }
             }, Unit, CACHE_PAGING_PAGE_SIZE)
 
-        val spec = RxElmSpec(pagingComponent).withState(pagingComponent.initialState())
+        val spec = TeapotSpec(pagingComponent).withState(pagingComponent.initialState())
 
         it("should not allow to start paging request before started") {
             spec.checkState { state ->

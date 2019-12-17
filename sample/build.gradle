@@ -44,15 +44,15 @@ dependencies {
     implementation 'com.jakewharton.timber:timber:4.7.1'
     implementation 'org.eclipse.mylyn.github:org.eclipse.egit.github.core:4.8.0.201706111038-r'
     implementation 'com.google.code.gson:gson:2.8.2'
-    kapt "com.google.dagger:dagger-compiler:2.14.1"
-    implementation "com.google.dagger:dagger:2.14.1"
+    kapt "com.google.dagger:dagger-compiler:2.23.1"
+    implementation "com.google.dagger:dagger:2.23.1"
     implementation 'com.jakewharton:butterknife:10.1.0'
     kapt 'com.jakewharton:butterknife-compiler:10.1.0'
     implementation 'com.github.markomilos:paginate:0.5.1'
 
-    implementation project(':rxelm')
-    implementation project(':rxelmextensions')
-    testImplementation project(':rxelmtest')
+    implementation project(':teapot')
+    implementation project(':teapotextensions')
+    testImplementation project(':teapottest')
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.12.0'

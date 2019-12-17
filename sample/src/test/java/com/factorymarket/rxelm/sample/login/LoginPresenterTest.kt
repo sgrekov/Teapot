@@ -14,8 +14,7 @@ import com.factorymarket.rxelm.sample.login.model.UserCredentialsLoadedMsg
 import com.factorymarket.rxelm.sample.login.presenter.LoginPresenter
 import com.factorymarket.rxelm.sample.login.view.ILoginView
 import com.factorymarket.rxelm.sample.navigation.Navigator
-import com.factorymarket.rxelm.test.RxElmSpec
-import io.reactivex.schedulers.Schedulers
+import com.factorymarket.rxelm.test.TeapotSpec
 import kotlinx.coroutines.Dispatchers
 import org.junit.Before
 import org.junit.Test
@@ -28,7 +27,7 @@ class LoginPresenterTest {
     lateinit var loginService: RepoService
     lateinit var prefs: IAppPrefs
     lateinit var programBuilder: ProgramBuilder
-    lateinit var spec : RxElmSpec<LoginState>
+    lateinit var spec : TeapotSpec<LoginState>
 
     @Before
     fun setUp() {
@@ -37,7 +36,7 @@ class LoginPresenterTest {
         prefs = mock(IAppPrefs::class.java)
         programBuilder = ProgramBuilder().outputDispatcher(Dispatchers.Main)
         presenter = LoginPresenter(view, programBuilder, prefs, loginService, mock(Navigator::class.java))
-        spec = RxElmSpec(presenter).withState(LoginState())
+        spec = TeapotSpec(presenter).withState(LoginState())
     }
 
     @Test

@@ -2,7 +2,7 @@ package com.factorymarket.rxelm.components.cachedpaging
 
 import com.factorymarket.rxelm.cmd.None
 import com.factorymarket.rxelm.components.paging.LogThrowableCmd
-import com.factorymarket.rxelm.test.RxElmSpec
+import com.factorymarket.rxelm.test.TeapotSpec
 import io.kotlintest.specs.DescribeSpec
 import io.reactivex.Single
 import java.net.UnknownHostException
@@ -22,7 +22,7 @@ class CachedPagingFeatureVariousCasesSpec : DescribeSpec({
             }
         }, Unit, CACHE_PAGING_PAGE_SIZE)
 
-    val spec = RxElmSpec(pagingComponent).withState(pagingComponent.initialState())
+    val spec = TeapotSpec(pagingComponent).withState(pagingComponent.initialState())
 
     describe("various cases") {
 
@@ -219,7 +219,7 @@ class CachedPagingFeatureVariousCasesSpec : DescribeSpec({
 
     describe("when pull to refresh started") {
         context("that one page is rendered on the screen") {
-            val pullToRefreshSpec = RxElmSpec(pagingComponent).withState(
+            val pullToRefreshSpec = TeapotSpec(pagingComponent).withState(
                 CachedPagingState(
                     isStarted = true,
                     isRefreshingEnabled = true,

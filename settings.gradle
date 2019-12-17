@@ -1,1 +1,1 @@
-include ':sample', ':rxelm', ':rxelmtest', ':rxelmextensions'
+include ':sample', ':teapot', ':teapottest', ':teapotextensions'

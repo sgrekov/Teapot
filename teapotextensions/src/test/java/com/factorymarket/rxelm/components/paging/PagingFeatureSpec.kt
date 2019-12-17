@@ -2,7 +2,7 @@ package com.factorymarket.rxelm.components.paging
 
 import com.factorymarket.rxelm.cmd.CancelCmd
 import com.factorymarket.rxelm.cmd.None
-import com.factorymarket.rxelm.test.RxElmSpec
+import com.factorymarket.rxelm.test.TeapotSpec
 import io.reactivex.Single
 import io.kotlintest.specs.DescribeSpec
 import java.net.UnknownHostException
@@ -23,7 +23,7 @@ class PagingFeatureSpec : DescribeSpec({
                 }
             }, Unit)
 
-        val spec = RxElmSpec(pagingComponent)
+        val spec = TeapotSpec(pagingComponent)
 
         context("a presenter") {
             it("should show full screen spinner, hide list and cancel previous request if any") {
