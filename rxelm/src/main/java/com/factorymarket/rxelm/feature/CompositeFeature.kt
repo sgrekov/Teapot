@@ -49,7 +49,7 @@ abstract class CompositeFeature<S : State>(
     }
 
     @Suppress("UNCHECKED_CAST", "UnsafeCast")
-    fun <SS : State> addFeature(
+    fun <SS : State> addComponent(
             component: PluggableFeature<SS>,
             toSubStateFun: (mainState: S) -> SS,
             toMainStateFun: (subState: SS, mainState: S) -> S
@@ -64,7 +64,7 @@ abstract class CompositeFeature<S : State>(
     }
 
     @Suppress("UNCHECKED_CAST", "UnsafeCast")
-    fun setMainFeature(component: PluggableFeature<S>) {
+    fun addMainComponent(component: PluggableFeature<S>) {
         components.add(
                 Triple(
                         component,

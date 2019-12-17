@@ -5,6 +5,7 @@ import com.factorymarket.rxelm.effect.coroutine.CoroutinesCommandExecutor
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.middleware.Middleware
 import io.reactivex.Scheduler
+import java.lang.IllegalArgumentException
 import com.factorymarket.rxelm.msg.ErrorMsg
 import com.factorymarket.rxelm.effect.rx.RxCommandExecutor
 import com.factorymarket.rxelm.sub.FlowSub

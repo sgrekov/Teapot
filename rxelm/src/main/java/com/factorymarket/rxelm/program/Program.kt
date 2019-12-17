@@ -2,12 +2,12 @@ package com.factorymarket.rxelm.program
 
 import com.factorymarket.rxelm.cmd.*
 import com.factorymarket.rxelm.contract.*
-import com.factorymarket.rxelm.ds.DoubleLinkedList
 import com.factorymarket.rxelm.log.LogType
 import com.factorymarket.rxelm.log.RxElmLogger
 import com.factorymarket.rxelm.middleware.Middleware
 import com.factorymarket.rxelm.msg.*
 import com.factorymarket.rxelm.sub.Sub
+import java.util.ArrayDeque
 
 /**
  * How to use these class:
@@ -49,7 +49,7 @@ class Program<S : State> internal constructor(
         private val middlewares: List<Middleware>) : MessageConsumer {
 
     /** Here messages are kept until they can be passed to messageRelay */
-    private var messageQueue = DoubleLinkedList<Msg>()
+    private var messageQueue = ArrayDeque<Msg>()
 
     /** State at this moment */
     private lateinit var state: S
@@ -85,7 +85,7 @@ class Program<S : State> internal constructor(
             return
         }
 
-        val msg = messageQueue.first()
+        val msg = messageQueue.first
 
         processBeforeUpdateToMiddlewares(msg, this.state)
 

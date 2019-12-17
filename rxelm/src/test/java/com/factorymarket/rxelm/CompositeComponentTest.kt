@@ -75,12 +75,12 @@ class CompositeComponentTest {
         mainComp = MainComponent(component1)
         compositeComponent = RxCompositeFeature(ProgramBuilder().outputScheduler(Schedulers.trampoline()), mainComp)
 
-        compositeComponent.addFeature(
+        compositeComponent.addComponent(
                 component1,
                 { mainState -> mainState.comp1State },
                 { subState, mainState -> mainState.copy(comp1State = subState) })
 
-        compositeComponent.setMainFeature(mainComp)
+        compositeComponent.addMainComponent(mainComp)
     }
 
     @Test
