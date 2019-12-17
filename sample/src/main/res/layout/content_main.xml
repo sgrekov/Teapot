@@ -7,7 +7,7 @@
         android:layout_height="match_parent"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
         tools:showIn="@layout/main_layout"
-        tools:context="com.factorymarket.rxelm.sample.main.view.MainActivity">
+        tools:context="dev.teapot.sample.main.view.MainActivity">
 
     <TextView
             android:text=""
