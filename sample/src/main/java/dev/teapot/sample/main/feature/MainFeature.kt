@@ -62,10 +62,10 @@ class MainFeature @Inject constructor(
         val flow1 = flow1()
         val flow2 = flow2()
 
-        program.addComponent(pagingFeature,
+        program.addFeature(pagingFeature,
                 { mainState -> mainState.reposList },
                 { repos, mainState -> mainState.copy(reposList = repos) })
-        program.addMainComponent(this)
+        program.addMainFeature(this)
         program.run(
                 initialState = restoredState ?: initialState(),
                 initialMsg = PagingStartMsg(),

@@ -26,7 +26,7 @@ abstract class CompositeFeature<S : State>(
         program.accept(msg)
     }
 
-    fun acceptCommand(cmd : Cmd){
+    fun acceptCommand(cmd: Cmd) {
         accept(ProxyMsg(cmd))
     }
 
@@ -50,14 +50,14 @@ abstract class CompositeFeature<S : State>(
     }
 
     @Suppress("UNCHECKED_CAST", "UnsafeCast")
-    fun <SS : State> addComponent(
-            component: PluggableFeature<SS>,
+    fun <SS : State> addFeature(
+            pluggableFeature: PluggableFeature<SS>,
             toSubStateFun: (mainState: S) -> SS,
             toMainStateFun: (subState: SS, mainState: S) -> S
     ) {
         components.add(
                 Triple(
-                        component,
+                        pluggableFeature,
                         toSubStateFun,
                         toMainStateFun
                 ) as Triple<PluggableFeature<State>, (mainState: S) -> State, (subState: State, mainState: S) -> S>
@@ -65,10 +65,10 @@ abstract class CompositeFeature<S : State>(
     }
 
     @Suppress("UNCHECKED_CAST", "UnsafeCast")
-    fun addMainComponent(component: PluggableFeature<S>) {
+    fun addMainFeature(feature: PluggableFeature<S>) {
         components.add(
                 Triple(
-                        component,
+                        feature,
                         null,
                         null
                 ) as Triple<PluggableFeature<State>, ((mainState: S) -> State)?, ((subState: State, mainState: S) -> S)?>
@@ -83,19 +83,19 @@ abstract class CompositeFeature<S : State>(
     @Suppress("UNCHECKED_CAST", "UnsafeCast")
     override fun update(msg: Msg, state: S): Update<S> {
         var combinedCmd = BatchCmd()
-        var mainComponentState = state
+        var mainFeatureState = state
 
-        components.forEach { (component, toSubStateFun, toMainStateFun) ->
-            if (component.handlesMessage(msg)) {
-                val componentStateBeforeUpdate = toSubStateFun?.invoke(mainComponentState) ?: mainComponentState
-                val updateResult = component.update(msg, componentStateBeforeUpdate)
-                val componentStateAfterUpdate = updateResult.updatedState
-                val updatedState = componentStateAfterUpdate ?: componentStateBeforeUpdate
-                mainComponentState = toMainStateFun?.invoke(updatedState, mainComponentState)
-                        ?: run { if (componentStateAfterUpdate != null) componentStateAfterUpdate as S else mainComponentState }
+        components.forEach { (feature, toSubStateFun, toMainStateFun) ->
+            if (feature.handlesMessage(msg)) {
+                val featureStateBeforeUpdate = toSubStateFun?.invoke(mainFeatureState) ?: mainFeatureState
+                val updateResult = feature.update(msg, featureStateBeforeUpdate)
+                val featureStateAfterUpdate = updateResult.updatedState
+                val updatedState = featureStateAfterUpdate ?: featureStateBeforeUpdate
+                mainFeatureState = toMainStateFun?.invoke(updatedState, mainFeatureState)
+                        ?: run { if (featureStateAfterUpdate != null) featureStateAfterUpdate as S else mainFeatureState }
                 combinedCmd = combinedCmd.merge(updateResult.cmds)
             }
         }
-        return Update.update(mainComponentState, (combinedCmd as Cmd))
+        return Update.update(mainFeatureState, (combinedCmd as Cmd))
     }
 }
