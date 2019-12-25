@@ -4,7 +4,7 @@ import dev.teapot.cmd.Cmd
 import dev.teapot.contract.RxEffectHandler
 import dev.teapot.effect.BaseCommandExecutor
 import dev.teapot.effect.RunningEffect
-import dev.teapot.log.RxElmLogger
+import dev.teapot.log.TeapotLogger
 import dev.teapot.msg.ErrorMsg
 import dev.teapot.msg.Msg
 import io.reactivex.Observable
@@ -19,7 +19,7 @@ class RxCommandExecutor(
         logTag: String,
         private val handleCmdErrors: Boolean,
         private val outputScheduler: Scheduler,
-        logger: RxElmLogger?) : BaseCommandExecutor<RxRunningEffect>(logTag, logger) {
+        logger: TeapotLogger?) : BaseCommandExecutor<RxRunningEffect>(logTag, logger) {
 
     /**
      * Since we can cancel commands by their class, we hold commands in map bags by the hashcode

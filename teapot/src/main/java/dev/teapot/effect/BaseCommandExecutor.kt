@@ -1,7 +1,7 @@
 package dev.teapot.effect
 
 import dev.teapot.cmd.*
-import dev.teapot.log.RxElmLogger
+import dev.teapot.log.TeapotLogger
 import dev.teapot.program.MessageConsumer
 import java.util.*
 
@@ -14,7 +14,7 @@ abstract class RunningEffect {
 
 abstract class BaseCommandExecutor<T : RunningEffect>(
         val logTag : String,
-        val logger: RxElmLogger?
+        val logger: TeapotLogger?
 ) : CommandExecutor {
 
     /**

@@ -2,7 +2,7 @@ package dev.teapot.sample.di
 
 import android.content.Context
 import dev.teapot.log.LogType
-import dev.teapot.log.RxElmLogger
+import dev.teapot.log.TeapotLogger
 import dev.teapot.program.ProgramBuilder
 import dev.teapot.sample.SampleApp
 import dev.teapot.sample.data.AppPrefs
@@ -53,26 +53,32 @@ interface AppComponent {
 
         @Provides
         @Singleton
-        fun programBuilder(): ProgramBuilder {
+        fun teapotLogger() : TeapotLogger {
+            return object : TeapotLogger {
+
+                override fun logType(): LogType {
+                    return LogType.All
+                }
+
+                override fun error(stateName: String, t: Throwable) {
+                    Timber.tag(stateName).e(t)
+                }
+
+                override fun log(stateName: String, message: String) {
+                    Timber.tag(stateName).d(message)
+                }
+
+            }
+        }
+
+        @Provides
+        @Singleton
+        fun programBuilder(logger: TeapotLogger): ProgramBuilder {
             return ProgramBuilder()
                 .outputScheduler(AndroidSchedulers.mainThread())
                 .outputDispatcher(Dispatchers.Main)
                 .handleCmdErrors(true)
-                .logger(object : RxElmLogger {
-
-                    override fun logType(): LogType {
-                        return LogType.All
-                    }
-
-                    override fun error(stateName: String, t: Throwable) {
-                        Timber.tag(stateName).e(t)
-                    }
-
-                    override fun log(stateName: String, message: String) {
-                        Timber.tag(stateName).d(message)
-                    }
-
-                })
+                .logger(logger)
         }
 
         @Provides

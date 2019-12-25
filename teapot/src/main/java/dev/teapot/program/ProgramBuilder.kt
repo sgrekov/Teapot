@@ -5,7 +5,7 @@ import java.lang.IllegalArgumentException
 import dev.teapot.contract.*
 import dev.teapot.effect.coroutine.CoroutinesCommandExecutor
 import dev.teapot.effect.rx.RxCommandExecutor
-import dev.teapot.log.RxElmLogger
+import dev.teapot.log.TeapotLogger
 import dev.teapot.middleware.Middleware
 import dev.teapot.sub.FlowSub
 import dev.teapot.sub.RxSub
@@ -15,7 +15,7 @@ class ProgramBuilder {
 
     private var outputScheduler: Scheduler? = null
     private var outputDispatcher: CoroutineDispatcher? = null
-    private var logger: RxElmLogger? = null
+    var logger: TeapotLogger? = null
     private var handleCmdErrors: Boolean = true
     private var middlewares: MutableList<Middleware> = mutableListOf()
 
@@ -37,7 +37,7 @@ class ProgramBuilder {
         return this
     }
 
-    fun logger(logger: RxElmLogger): ProgramBuilder {
+    fun logger(logger: TeapotLogger): ProgramBuilder {
         this.logger = logger
         return this
     }

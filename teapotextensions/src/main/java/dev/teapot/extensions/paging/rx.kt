@@ -4,12 +4,13 @@ import dev.teapot.msg.Msg
 import dev.teapot.statelessEffect
 import dev.teapot.cmd.Cmd
 import dev.teapot.contract.RxEffectHandler
+import dev.teapot.log.TeapotLogger
 import io.reactivex.Single
 
 class RxPagingFeature<T, FETCH_PARAMS>(
         private val cmdHandlerPaging: RxPagingCommandsHandler<T, FETCH_PARAMS>,
         fetchParams: FETCH_PARAMS?,
-        errorLogger: ErrorLogger? = null,
+        errorLogger: TeapotLogger? = null,
         namespace: String = ""
 ) : PagingFeature<T, FETCH_PARAMS>(fetchParams, errorLogger, namespace), RxEffectHandler {
 
@@ -34,7 +35,7 @@ class RxPagingFeature<T, FETCH_PARAMS>(
         }.onErrorResumeNext { Single.just(PagingErrorMsg(it, cmd, ns = namespace)) }
 
         is LogThrowableCmd -> statelessEffect {
-            errorLogger?.logError(cmd.error)
+            errorLogger?.error("PagingState",cmd.error)
         }
         else -> throw IllegalArgumentException("Unsupported message $cmd")
     }

@@ -15,14 +15,9 @@ import dev.teapot.cmd.ProxyCmd
 import dev.teapot.contract.PluggableFeature
 import dev.teapot.contract.Renderable
 import dev.teapot.contract.Update
-import dev.teapot.extensions.paging.CoPagingCommandsHandler
-import dev.teapot.extensions.paging.CoPagingFeature
-import dev.teapot.extensions.paging.PagingErrorMsg
-import dev.teapot.extensions.paging.PagingOnScrolledToEndMsg
-import dev.teapot.extensions.paging.PagingRefreshItemsCmd
-import dev.teapot.extensions.paging.PagingResult
-import dev.teapot.extensions.paging.PagingStartMsg
+import dev.teapot.extensions.paging.*
 import dev.teapot.feature.CoroutineCompositeFeature
+import dev.teapot.log.TeapotLogger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -38,7 +33,7 @@ class MainFeature @Inject constructor(
 ) : PluggableFeature<MainState>, Renderable<MainState>, CoPagingCommandsHandler<Repository, String>, Paginate.Callbacks {
 
     private val program: CoroutineCompositeFeature<MainState> = CoroutineCompositeFeature(programBuilder, this)
-    private val pagingFeature = CoPagingFeature(this, service.getUserName())
+    private val pagingFeature = programBuilder.buildCoPagingFeature(this, service.getUserName())
 
     override suspend fun fetchPage(page: Int, userName: String?): PagingResult<Repository> {
         return service.getStarredRepos2(userName, page)

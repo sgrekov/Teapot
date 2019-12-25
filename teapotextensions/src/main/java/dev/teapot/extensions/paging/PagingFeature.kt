@@ -6,11 +6,12 @@ import dev.teapot.cmd.CancelCmd
 import dev.teapot.cmd.Cmd
 import dev.teapot.contract.PluggableFeature
 import dev.teapot.contract.Update
+import dev.teapot.log.TeapotLogger
 
 
 abstract class PagingFeature<T, FETCH_PARAMS>(
         protected val fetchParams: FETCH_PARAMS?,
-        protected val errorLogger: ErrorLogger? = null,
+        protected val errorLogger: TeapotLogger? = null,
         protected val namespace: String = ""
 ) : PluggableFeature<PagingState<T, FETCH_PARAMS>> {
 

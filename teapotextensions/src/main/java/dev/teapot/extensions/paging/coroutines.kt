@@ -4,11 +4,12 @@ import dev.teapot.msg.Idle
 import dev.teapot.msg.Msg
 import dev.teapot.cmd.Cmd
 import dev.teapot.contract.CoroutinesEffectHandler
+import dev.teapot.log.TeapotLogger
 
 class CoPagingFeature<T, FETCH_PARAMS>(
         private val cmdHandlerPaging: CoPagingCommandsHandler<T, FETCH_PARAMS>,
         fetchParams: FETCH_PARAMS?,
-        errorLogger: ErrorLogger? = null,
+        errorLogger: TeapotLogger? = null,
         namespace: String = ""
 ) : PagingFeature<T, FETCH_PARAMS>(fetchParams, errorLogger, namespace), CoroutinesEffectHandler {
 
@@ -43,7 +44,7 @@ class CoPagingFeature<T, FETCH_PARAMS>(
             }
         }
         is LogThrowableCmd -> {
-            errorLogger?.logError(cmd.error)
+            errorLogger?.error("PagingState", cmd.error)
             Idle
         }
         else -> throw IllegalArgumentException("Unsupported message $cmd")

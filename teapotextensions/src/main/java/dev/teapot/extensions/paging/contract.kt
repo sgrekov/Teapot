@@ -9,8 +9,3 @@ interface PagingView  {
     fun setFullScreenSpinnerVisible(isVisible: Boolean)
     fun setListVisible(isVisible: Boolean)
 }
-
-interface ErrorLogger {
-
-    fun logError(err : Throwable)
-}

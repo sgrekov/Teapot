@@ -1,12 +1,12 @@
 package dev.teapot.extensions.cachedpaging
 
-import dev.teapot.extensions.paging.ErrorLogger
 import dev.teapot.extensions.paging.LogThrowableCmd
 import dev.teapot.cmd.BatchCmd
 import dev.teapot.cmd.Cmd
 import dev.teapot.contract.PluggableFeature
 import dev.teapot.contract.RxEffectHandler
 import dev.teapot.contract.Update
+import dev.teapot.log.TeapotLogger
 import dev.teapot.msg.Msg
 import dev.teapot.statelessEffect
 import io.reactivex.Single
@@ -40,7 +40,7 @@ class CachedPagingFeature<T, FETCH_PARAMS>(
         private val cmdHandlerPaging: CachedPagingCommandsHandler<T, FETCH_PARAMS>,
         private val params: FETCH_PARAMS,
         private val pageSize: Int,
-        private val errorLogger: ErrorLogger? = null
+        private val errorLogger: TeapotLogger? = null
 ) : PluggableFeature<CachedPagingState<T, FETCH_PARAMS>>, RxEffectHandler {
 
     private val messages = listOf(
@@ -207,7 +207,7 @@ class CachedPagingFeature<T, FETCH_PARAMS>(
         }.onErrorResumeNext { Single.just(CachedPagingErrorMsg(it, cmd)) }
 
         is LogThrowableCmd -> statelessEffect {
-            errorLogger?.logError(cmd.error)
+            errorLogger?.error("CachedPagingState", cmd.error)
         }
         else -> throw IllegalArgumentException("Unsupported message $cmd")
     }

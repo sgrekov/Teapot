@@ -5,7 +5,7 @@ import dev.teapot.cmd.ViewCmd
 import dev.teapot.contract.CoroutinesEffectHandler
 import dev.teapot.effect.BaseCommandExecutor
 import dev.teapot.effect.RunningEffect
-import dev.teapot.log.RxElmLogger
+import dev.teapot.log.TeapotLogger
 import dev.teapot.msg.ErrorMsg
 import dev.teapot.msg.Msg
 import kotlinx.coroutines.*
@@ -25,7 +25,7 @@ class CoroutinesCommandExecutor(
         private val outputDispatcher: CoroutineDispatcher,
         logTag: String,
         private val handleCmdErrors: Boolean,
-        logger: RxElmLogger?) : BaseCommandExecutor<RunningJob>(logTag, logger) {
+        logger: TeapotLogger?) : BaseCommandExecutor<RunningJob>(logTag, logger) {
 
     private val parentJob = SupervisorJob()
     private val executorScope = CoroutineScope(parentJob)

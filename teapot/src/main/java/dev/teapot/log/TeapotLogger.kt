@@ -16,7 +16,7 @@ enum class LogType {
     }
 }
 
-interface RxElmLogger {
+interface TeapotLogger {
 
     fun logType(): LogType {
         return LogType.All

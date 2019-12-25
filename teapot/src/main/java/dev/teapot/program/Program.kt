@@ -9,7 +9,7 @@ import dev.teapot.contract.State
 import dev.teapot.contract.Upd
 import dev.teapot.contract.Update
 import dev.teapot.log.LogType
-import dev.teapot.log.RxElmLogger
+import dev.teapot.log.TeapotLogger
 import dev.teapot.middleware.Middleware
 import dev.teapot.msg.*
 import dev.teapot.sub.Sub
@@ -51,7 +51,7 @@ import java.util.ArrayDeque
  */
 class Program<S : State> internal constructor(
         private val feature: Upd<S>,
-        private val logger: RxElmLogger?,
+        private val logger: TeapotLogger?,
         private val middlewares: List<Middleware>) : MessageConsumer {
 
     /** Here messages are kept until they can be passed to messageRelay */
@@ -149,7 +149,7 @@ class Program<S : State> internal constructor(
 
     fun isRendering(): Boolean = isRendering
 
-    private fun update(msg: Msg, feature: Upd<S>, logger: RxElmLogger?): Update<S> {
+    private fun update(msg: Msg, feature: Upd<S>, logger: TeapotLogger?): Update<S> {
         logUpdate(logger, msg)
 
         val updateResult = if (msg is ProxyMsg) {
@@ -163,7 +163,7 @@ class Program<S : State> internal constructor(
         return updateResult
     }
 
-    private fun logUpdate(logger: RxElmLogger?, msg: Msg) {
+    private fun logUpdate(logger: TeapotLogger?, msg: Msg) {
         logger?.takeIf { it.logType().needToShowUpdates() }
                 ?.log(this.state.javaClass.simpleName, "update with msg:${msg.javaClass.simpleName} ")
         if (msg is ErrorMsg){
@@ -211,7 +211,7 @@ class Program<S : State> internal constructor(
         accept(ProxyMsg(cmd))
     }
 
-    private fun logAccept(logger: RxElmLogger?, msg: Msg) {
+    private fun logAccept(logger: TeapotLogger?, msg: Msg) {
         logger?.takeIf { logger.logType() == LogType.All }?.log(
                 this.state.javaClass.simpleName,
                 "accept msg: ${msg.javaClass.simpleName}, queue size:${messageQueue.size} lock:$lock "
