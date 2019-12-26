@@ -1,6 +1,6 @@
 package dev.teapot.sample.repo.di
 
-import dev.teapot.sample.repo.view.IRepoView
+import dev.teapot.sample.repo.view.RepoView
 import dev.teapot.sample.repo.view.RepoFragment
 import dagger.Module
 import dagger.Provides
@@ -19,7 +19,7 @@ interface RepoComponent {
 class RepoModule(private val fragment: RepoFragment, private val repoId: String) {
 
     @Provides
-    fun view(): IRepoView = fragment
+    fun view(): RepoView = fragment
 
     @Provides
     @Named("repo_id")

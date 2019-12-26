@@ -9,7 +9,7 @@ import dev.teapot.sample.repo.model.InitRepo
 import dev.teapot.sample.repo.model.LoadRepo
 import dev.teapot.sample.repo.model.RepoLoaded
 import dev.teapot.sample.repo.model.RepoState
-import dev.teapot.sample.repo.view.IRepoView
+import dev.teapot.sample.repo.view.RepoView
 import dev.teapot.cmd.Cmd
 import dev.teapot.contract.CoroutineFeature
 import dev.teapot.contract.Renderable
@@ -19,7 +19,7 @@ import javax.inject.Inject
 import javax.inject.Named
 
 class RepoFeature @Inject constructor(
-        private val view: IRepoView,
+        private val view: RepoView,
         @Named("repo_id") private val repoId: String,
         programBuilder: ProgramBuilder,
         private val apiService: RepoService
