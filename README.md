@@ -1,4 +1,4 @@
-[Bintray](https://img.shields.io/badge/Bintray-0.9.1-green.svg)](https://bintray.com/sgrekov/TeapotTeapot/Teapot/0.9.1)
+[![[Bintray](https://img.shields.io/badge/Bintray-0.9.1-green.svg)](https://bintray.com/sgrekov/TeapotTeapot/Teapot/0.9.1)]
 [![License](https://img.shields.io/badge/License-Apache%202.0-yellowgreen.svg)](https://github.com/FactoryMarketRetailGmbH/RxElm/blob/master/LICENSE)
 
 # Teapot
