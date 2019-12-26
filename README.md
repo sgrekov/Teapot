@@ -7,9 +7,15 @@ Unidirectional Dataflow library for Android inspired by The Elm Architecture.
 
 ## Dependency
 
+repositories {
+...
+maven { url "https://dl.bintray.com/sgrekov/Teapot" }
+...
+}
+
 ```
 implementation 'dev.teapot:teapot:0.9.1'
-testImplementation 'dev.teapot::teapottest:0.9.1'
+testImplementation 'dev.teapot:teapottest:0.9.1'
 ```
 
 
@@ -108,7 +114,7 @@ class MyFragment : Fragment(), Upd<IncrementDecrementState>, Renderable<Incremen
 ```
 
 ### Sample Project 
-To see full working sample, check out [the sample app](https://github.com/FactoryMarketRetailGmbH/Teapot/tree/master/sample) 
+To see full working sample, check out [the sample app](https://github.com/sgrekov/Teapot/tree/master/sample) 
 
 
 ### Resources
