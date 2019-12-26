@@ -1,46 +1,27 @@
 [![Maven Central](https://img.shields.io/maven-central/v/com.factorymarket.rxelm/rxelm.svg)](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.factorymarket.rxelm%22)
 [![License](https://img.shields.io/badge/License-Apache%202.0-yellowgreen.svg)](https://github.com/FactoryMarketRetailGmbH/RxElm/blob/master/LICENSE)
 
-# RxElm
+# Teapot
 Unidirectional Dataflow library for Android inspired by The Elm Architecture. 
 
 
 ## Dependency
 
 ```
-implementation 'com.factorymarket.rxelm:rxelm:0.7.0'
-//Testing utility
-testImplementation 'com.factorymarket.rxelm:rxelm-test:0.4.0'
+implementation 'dev.teapot:teapot:0.9.1'
+testImplementation 'dev.teapot::teapottest:0.9.1'
 ```
 
-
-#### Snapshot
-Use `0.X.0-SNAPSHOT` as your version number and add the url to the snapshot repository:
-
-```
-allprojects {
-    repositories {     
-        maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
-    }
-}
-
-```
-
-```
-implementation 'com.factorymarket.rxelm:rxelm:0.X.0-SNAPSHOT'
-```
 
 
 ## Concepts 
-RxElm is heavily influenced by The Elm Architecture. Its core concepts:
+Teapot is heavily influenced by The Elm Architecture(TEA). Its core concepts:
 
 * Unidirectional dataflow
 * Immutable state
 * Managed side effects
 
-It allows to write highly testable and predictable UI logic. RxElm is written in Kotlin and built 
-on top of RxJava2. One of the main advantages of RxElm is simplicity and while RxElm relies on solid reactive foundation
-of RxJava, it hides it's complexities and uses it only for managing side effects and external events.
+It allows to write highly testable and predictable UI logic. Teapot is written in Kotlin and supports executing side effects via RxJava2 or Coroutines.
 
 ### Core types
 #### State 
@@ -127,11 +108,8 @@ class MyFragment : Fragment(), RenderableComponent<IncrementDecrementState> {
 }
 ```
 
-### Wiki
-To learn more, see the [wiki](https://github.com/FactoryMarketRetailGmbH/RxElm/wiki) for a user guide and best practices.
-
 ### Sample Project 
-To see full working sample, check out [the sample app](https://github.com/FactoryMarketRetailGmbH/RxElm/tree/master/sample) 
+To see full working sample, check out [the sample app](https://github.com/FactoryMarketRetailGmbH/Teapot/tree/master/sample) 
 
 
 ### Resources
