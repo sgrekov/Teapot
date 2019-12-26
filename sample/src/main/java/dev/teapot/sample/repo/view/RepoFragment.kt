@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.recyclerview.widget.LinearLayoutManager
 import butterknife.BindView
 import dev.teapot.sample.BaseFragment
 import dev.teapot.sample.R
@@ -13,7 +12,7 @@ import dev.teapot.sample.repo.presenter.RepoFeature
 import org.eclipse.egit.github.core.Repository
 import javax.inject.Inject
 
-class RepoFragment : BaseFragment(), IRepoView {
+class RepoFragment : BaseFragment(), RepoView {
 
     companion object {
         const val REPO_ID_KEY = "repo_id_key"

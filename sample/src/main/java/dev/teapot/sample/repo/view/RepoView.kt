@@ -2,7 +2,7 @@ package dev.teapot.sample.repo.view
 
 import org.eclipse.egit.github.core.Repository
 
-interface IRepoView {
+interface RepoView {
     fun showLoading(loading: Boolean)
     fun showRepo(repo: Repository)
 }
