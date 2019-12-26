@@ -7,13 +7,14 @@ Unidirectional Dataflow library for Android inspired by The Elm Architecture.
 
 ## Dependency
 
-repositories {
-...
-maven { url "https://dl.bintray.com/sgrekov/Teapot" }
-...
-}
 
 ```
+repositories {
+    ...
+    maven { url "https://dl.bintray.com/sgrekov/Teapot" }
+    ...
+}
+
 implementation 'dev.teapot:teapot:0.9.1'
 testImplementation 'dev.teapot:teapottest:0.9.1'
 ```
