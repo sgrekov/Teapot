@@ -26,8 +26,6 @@ import dev.teapot.cmd.Cmd
 import dev.teapot.contract.CoroutineFeature
 import dev.teapot.contract.Renderable
 import dev.teapot.contract.Update
-import io.reactivex.Observable
-import io.reactivex.disposables.Disposable
 import org.eclipse.egit.github.core.client.RequestException
 import timber.log.Timber
 import javax.inject.Inject
@@ -159,16 +157,12 @@ class LoginFeature @Inject constructor(
         return (login.startsWith("42") || login == "admin")
     }
 
-    fun addLoginInput(logintextViewText: Observable<CharSequence>): Disposable {
-        return logintextViewText.skip(1).subscribe { login ->
-            program.accept(LoginInputMsg(login.toString()))
-        }
+    fun loginInput(login : CharSequence) {
+        program.accept(LoginInputMsg(login.toString()))
     }
 
-    fun addPasswordInput(passValueObservable: Observable<CharSequence>): Disposable {
-        return passValueObservable.skip(1).subscribe { pass ->
-            program.accept(PassInputMsg(pass.toString()))
-        }
+    fun passInput(pass : CharSequence) {
+        program.accept(PassInputMsg(pass.toString()))
     }
 
     fun destroy() {

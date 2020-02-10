@@ -9,12 +9,10 @@ import butterknife.ButterKnife
 import butterknife.Unbinder
 import dev.teapot.sample.main.di.ActivityComponent
 import dev.teapot.sample.main.view.MainActivity
-import io.reactivex.disposables.CompositeDisposable
 
 abstract class BaseFragment : Fragment() {
 
     lateinit var unbinder: Unbinder
-    var viewDisposables: CompositeDisposable = CompositeDisposable()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -29,10 +27,6 @@ abstract class BaseFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        if (!viewDisposables.isDisposed) {
-            viewDisposables.dispose()
-            viewDisposables = CompositeDisposable()
-        }
         unbinder.unbind()
     }
 

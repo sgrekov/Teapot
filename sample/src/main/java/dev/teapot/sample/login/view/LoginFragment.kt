@@ -2,6 +2,8 @@ package dev.teapot.sample.login.view
 
 import android.content.Context
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
@@ -15,7 +17,6 @@ import dev.teapot.sample.login.di.LoginModule
 import dev.teapot.sample.login.feature.LoginFeature
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import com.jakewharton.rxbinding2.widget.RxTextView
 import javax.inject.Inject
 
 class LoginFragment : BaseFragment(), LoginView {
@@ -43,9 +44,33 @@ class LoginFragment : BaseFragment(), LoginView {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        viewDisposables.add(feature.addLoginInput(RxTextView.textChanges(loginText)))
-        viewDisposables.add(feature.addPasswordInput(RxTextView.textChanges(passwordText)))
         loginBtn.setOnClickListener { feature.loginBtnClick() }
+        loginText.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                feature.loginInput(s?.toString()!!)
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+
+            }
+
+        })
+        passwordText.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                feature.passInput(s?.toString()!!)
+            }
+
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+            }
+
+        })
         saveCredentialsCb.setOnCheckedChangeListener { buttonView, isChecked ->
             hideKeyboard()
             feature.onSaveCredentialsCheck(isChecked)

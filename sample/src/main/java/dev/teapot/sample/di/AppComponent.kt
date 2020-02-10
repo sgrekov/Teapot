@@ -15,8 +15,6 @@ import dagger.BindsInstance
 import dagger.Component
 import dagger.Module
 import dagger.Provides
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
 import kotlinx.coroutines.Dispatchers
 import timber.log.Timber
 import javax.inject.Singleton
@@ -48,7 +46,7 @@ interface AppComponent {
         @Provides
         @Singleton
         fun githubService(): RepoService {
-            return GitHubService(Schedulers.io())
+            return GitHubService()
         }
 
         @Provides
@@ -75,7 +73,6 @@ interface AppComponent {
         @Singleton
         fun programBuilder(logger: TeapotLogger): ProgramBuilder {
             return ProgramBuilder()
-                .outputScheduler(AndroidSchedulers.mainThread())
                 .outputDispatcher(Dispatchers.Main)
                 .handleCmdErrors(true)
                 .logger(logger)
