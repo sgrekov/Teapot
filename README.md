@@ -1,4 +1,4 @@
-[![Maven Central](https://img.shields.io/maven-central/v/com.factorymarket.rxelm/rxelm.svg)](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.factorymarket.rxelm%22)
+[![Bintray](https://img.shields.io/badge/Bintray-0.9.1-green.svg)](https://bintray.com/sgrekov/Teapot/Teapot/0.9.1)
 [![License](https://img.shields.io/badge/License-Apache%202.0-yellowgreen.svg)](https://github.com/FactoryMarketRetailGmbH/RxElm/blob/master/LICENSE)
 
 # Teapot
@@ -7,9 +7,16 @@ Unidirectional Dataflow library for Android inspired by The Elm Architecture.
 
 ## Dependency
 
+
 ```
+repositories {
+    ...
+    maven { url "https://dl.bintray.com/sgrekov/Teapot" }
+    ...
+}
+
 implementation 'dev.teapot:teapot:0.9.1'
-testImplementation 'dev.teapot::teapottest:0.9.1'
+testImplementation 'dev.teapot:teapottest:0.9.1'
 ```
 
 
@@ -46,27 +53,30 @@ Function render() takes State as an input, and renders view in declarative manne
 ### Minimal implementation
 
 ```kotlin
-class MyFragment : Fragment(), RenderableComponent<IncrementDecrementState> {
+
+data class IncrementDecrementState(val value: Int = 0) : State()
+    
+object Inc : Msg()
+object Dec : Msg()    
+    
+class MyFragment : Fragment(), Upd<IncrementDecrementState>, Renderable<IncrementDecrementState> {
 
   
     private lateinit var plusBtn: Button
     private lateinit var minusBtn: Button
     private lateinit var counterText: TextView   
-    
-    data class IncrementDecrementState(val value: Int = 0) : State()
-    
-    object Inc : Msg()
-    object Dec : Msg()
+                    
+    val program = ProgramBuilder()
+                        .outputScheduler(AndroidSchedulers.mainThread())
+                        .build(this)            
+   
 
     override fun onCreateView(
             inflater: LayoutInflater, container: ViewGroup?,
             savedInstanceState: Bundle?
         ): View? {
+        
         val view = inflater.inflate(R.layout.main_layout, container, false)       
-
-        val program = ProgramBuilder()
-                        .outputScheduler(AndroidSchedulers.mainThread())
-                        .build(this)
                         
         plusBtn = view.findViewById(R.id.plus_btn)
         minusBtn = view.findViewById(R.id.minus_btn)
@@ -85,12 +95,8 @@ class MyFragment : Fragment(), RenderableComponent<IncrementDecrementState> {
     
     override fun render(state: IncrementDecrementState) {
         state.apply {
-            counterText.showValue(value)
+            counterText.setText(value)
         }
-    }
-    
-    override fun call(cmd: Cmd): Single<Msg> {
-        return Single.just(Idle)         
     }
     
     override fun onSaveInstanceState(outState  : Bundle) {
@@ -109,7 +115,7 @@ class MyFragment : Fragment(), RenderableComponent<IncrementDecrementState> {
 ```
 
 ### Sample Project 
-To see full working sample, check out [the sample app](https://github.com/FactoryMarketRetailGmbH/Teapot/tree/master/sample) 
+To see full working sample, check out [the sample app](https://github.com/sgrekov/Teapot/tree/master/sample) 
 
 
 ### Resources
