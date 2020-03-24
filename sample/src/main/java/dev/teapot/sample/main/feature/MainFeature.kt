@@ -30,10 +30,10 @@ class MainFeature @Inject constructor(
         val programBuilder: ProgramBuilder,
         private val service: RepoService,
         private val navigator: Navigator
-) : PluggableFeature<MainState>, Renderable<MainState>, CoPagingCommandsHandler<Repository, String>, Paginate.Callbacks {
+) : PluggableFeature<MainState, String>, Renderable<MainState>, CoPagingCommandsHandler<Repository, String>, Paginate.Callbacks {
 
     private val program: CoroutineCompositeFeature<MainState> = CoroutineCompositeFeature(programBuilder, this)
-    private val pagingFeature = programBuilder.buildCoPagingFeature(this, service.getUserName())
+    private val pagingFeature = programBuilder.buildCoPagingFeature(this)
 
     override suspend fun fetchPage(page: Int, userName: String?): PagingResult<Repository> {
         return service.getStarredRepos2(userName, page)
@@ -62,7 +62,7 @@ class MainFeature @Inject constructor(
                 { repos, mainState -> mainState.copy(reposList = repos) })
         program.addMainFeature(this)
         program.run(
-                initialState = restoredState ?: initialState(),
+                initialState = restoredState ?: initialState(service.getUserName()),
                 initialMsg = PagingStartMsg(),
                 sub = programBuilder.buildFLowSub<MainState>()
                         .addMessageFlow(flow1)
@@ -94,7 +94,7 @@ class MainFeature @Inject constructor(
 
     override fun handlesCommands(cmd: Cmd): Boolean = true
 
-    override fun initialState(): MainState = MainState(userName = service.getUserName(), reposList = pagingFeature.initialState())
+    override fun initialState(initialParams : String): MainState = MainState(userName = initialParams, reposList = pagingFeature.initialState(initialParams))
 
     override fun render(state: MainState) {
         state.apply {

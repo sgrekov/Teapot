@@ -24,7 +24,7 @@ class CachedPagingFeatureWithCacheCaseSpec : DescribeSpec({
                     }
                 }, Unit, CACHE_PAGING_PAGE_SIZE)
 
-        val spec = TeapotSpec(pagingComponent).withState(pagingComponent.initialState())
+        val spec = TeapotSpec(pagingComponent).withState(pagingComponent.initialState(Unit))
 
         it("should not allow to start paging request before started") {
             spec.checkState { state ->

@@ -7,6 +7,7 @@ import dev.teapot.cmd.Cmd
 import dev.teapot.contract.*
 import dev.teapot.feature.CompositeFeature
 import dev.teapot.feature.RxCompositeFeature
+import dev.teapot.msg.Init
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
 import org.junit.Assert
@@ -21,12 +22,12 @@ class CompositeComponentTest {
     object Comp1Msg2 : Msg()
     data class Comp1Cmd(val foo: String) : Cmd()
 
-    class Feature1 : PluggableFeature<Comp1State>, RxEffectHandler {
+    class Feature1 : PluggableFeature<Comp1State, Unit>, RxEffectHandler {
         override fun handlesMessage(msg: Msg): Boolean = msg is Comp1Msg
 
         override fun handlesCommands(cmd: Cmd): Boolean = cmd is Comp1Cmd
 
-        override fun initialState(): Comp1State = Comp1State(foo = "fooInitial")
+        override fun initialState(initialParams : Unit): Comp1State = Comp1State(foo = "fooInitial")
 
         override fun update(msg: Msg, state: Comp1State): Update<Comp1State> = when (msg) {
             is Comp1Msg -> Update.state(state.copy(foo = msg.foo))
@@ -46,7 +47,7 @@ class CompositeComponentTest {
     data class MainMsg1(val bar: String) : Msg()
     data class MainCmd1(val bar: String) : Cmd()
 
-    class MainComponent(val feature1: Feature1) : PluggableFeature<MainState>, Renderable<MainState>, RxEffectHandler {
+    class MainComponent(val feature1: Feature1) : PluggableFeature<MainState, Unit>, Renderable<MainState>, RxEffectHandler {
 
         override fun render(state: MainState) {}
 
@@ -54,7 +55,7 @@ class CompositeComponentTest {
 
         override fun handlesCommands(cmd: Cmd): Boolean = true
 
-        override fun initialState(): MainState = MainState(bar = "initialBar", comp1State = feature1.initialState())
+        override fun initialState(initialParams: Unit): MainState = MainState(bar = "initialBar", comp1State = feature1.initialState(initialParams))
 
         override fun update(msg: Msg, state: MainState): Update<MainState> = when (msg) {
             is MainMsg1 -> Update.state(state.copy(bar = msg.bar))
@@ -85,14 +86,14 @@ class CompositeComponentTest {
 
     @Test
     fun testStart() {
-        compositeComponent.run(mainComp.initialState())
+        compositeComponent.run(mainComp.initialState(Unit))
         Assert.assertEquals(compositeComponent.state()?.bar, "initialBar")
         Assert.assertEquals(compositeComponent.state()?.comp1State?.foo, "fooInitial")
     }
 
     @Test
     fun testSubComponentMsg() {
-        compositeComponent.run(mainComp.initialState())
+        compositeComponent.run(mainComp.initialState(Unit))
         compositeComponent.accept(Comp1Msg(foo = "foo1"))
 
         Assert.assertEquals("initialBar", compositeComponent.state()?.bar)
@@ -101,7 +102,7 @@ class CompositeComponentTest {
 
     @Test
     fun testMainComponentMsg() {
-        compositeComponent.run(mainComp.initialState())
+        compositeComponent.run(mainComp.initialState(Unit))
         compositeComponent.accept(MainMsg1("bar1"))
 
         Assert.assertEquals("bar1", compositeComponent.state()?.bar)

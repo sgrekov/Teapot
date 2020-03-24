@@ -10,14 +10,13 @@ import dev.teapot.log.TeapotLogger
 
 
 abstract class PagingFeature<T, FETCH_PARAMS>(
-        protected val fetchParams: FETCH_PARAMS?,
         protected val errorLogger: TeapotLogger? = null,
         protected val namespace: String = ""
-) : PluggableFeature<PagingState<T, FETCH_PARAMS>> {
+) : PluggableFeature<PagingState<T, FETCH_PARAMS>, FETCH_PARAMS> {
 
 
-    override fun initialState(): PagingState<T, FETCH_PARAMS> {
-        return PagingState(fetchParams = fetchParams)
+    override fun initialState(initialParams : FETCH_PARAMS): PagingState<T, FETCH_PARAMS> {
+        return PagingState(fetchParams = initialParams)
     }
 
     override fun handlesMessage(msg: Msg): Boolean {

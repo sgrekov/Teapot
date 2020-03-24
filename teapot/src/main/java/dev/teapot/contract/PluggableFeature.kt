@@ -3,7 +3,7 @@ package dev.teapot.contract
 import dev.teapot.cmd.Cmd
 import dev.teapot.msg.Msg
 
-interface PluggableFeature<S : State> : Upd<S> {
+interface PluggableFeature<S : State, P> : Upd<S> {
 
     /**
      * Optional method.
@@ -19,5 +19,5 @@ interface PluggableFeature<S : State> : Upd<S> {
      */
     fun handlesCommands(cmd: Cmd): Boolean
 
-    fun initialState(): S
+    fun initialState(initialParams : P): S
 }

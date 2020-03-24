@@ -22,7 +22,7 @@ class PagingFeatureSpec : DescribeSpec({
                     override fun fetchPage(page: Int, params: Unit?): Single<PagingResult<String>> {
                         return Single.just(PagingResult(listOf(), 4))
                     }
-                }, Unit)
+                })
 
         val spec = TeapotSpec(pagingComponent)
 

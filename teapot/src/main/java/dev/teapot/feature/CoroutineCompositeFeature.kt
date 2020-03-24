@@ -10,7 +10,7 @@ import dev.teapot.contract.Renderable
 import dev.teapot.contract.State
 
 class CoroutineCompositeFeature<S : State>(val programBuilder: ProgramBuilder,
-                                                                                  renderer: Renderable<S>)
+                                           renderer: Renderable<S>)
     : CompositeFeature<S>(renderer), CoroutinesEffectHandler {
 
     override fun buildProgram(): Program<S> {

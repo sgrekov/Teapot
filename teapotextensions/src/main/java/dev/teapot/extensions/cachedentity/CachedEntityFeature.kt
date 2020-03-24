@@ -12,13 +12,13 @@ class CachedEntityFeature<T, FETCH_PARAMS>(
         private val params: FETCH_PARAMS,
         private val commandHandler: CachedEntityCommandHandler<T, FETCH_PARAMS>,
         private val namespace: String = ""
-) : PluggableFeature<CachedEntityState<T, FETCH_PARAMS>>, RxEffectHandler {
+) : PluggableFeature<CachedEntityState<T, FETCH_PARAMS>, Unit>, RxEffectHandler {
 
     override fun handlesMessage(msg: Msg): Boolean = msg is CachedEntityMsg && msg.namespace == namespace
 
     override fun handlesCommands(cmd: Cmd): Boolean = cmd is CachedEntityCmd && cmd.namespace == namespace
 
-    override fun initialState(): CachedEntityState<T, FETCH_PARAMS> = CachedEntityState.initial(params)
+    override fun initialState(initialParams : Unit): CachedEntityState<T, FETCH_PARAMS> = CachedEntityState.initial(params)
 
     @Suppress("UnsafeCast")
     override fun call(cmd: Cmd): Single<Msg> {

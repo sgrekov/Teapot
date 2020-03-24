@@ -23,7 +23,7 @@ class CachedPagingFeatureVariousCasesSpec : DescribeSpec({
                 }
             }, Unit, CACHE_PAGING_PAGE_SIZE)
 
-    val spec = TeapotSpec(pagingComponent).withState(pagingComponent.initialState())
+    val spec = TeapotSpec(pagingComponent).withState(pagingComponent.initialState(Unit))
 
     describe("various cases") {
 

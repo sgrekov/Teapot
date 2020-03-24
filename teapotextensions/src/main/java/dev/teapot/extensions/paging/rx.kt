@@ -9,10 +9,9 @@ import io.reactivex.Single
 
 class RxPagingFeature<T, FETCH_PARAMS>(
         private val cmdHandlerPaging: RxPagingCommandsHandler<T, FETCH_PARAMS>,
-        fetchParams: FETCH_PARAMS?,
         errorLogger: TeapotLogger? = null,
         namespace: String = ""
-) : PagingFeature<T, FETCH_PARAMS>(fetchParams, errorLogger, namespace), RxEffectHandler {
+) : PagingFeature<T, FETCH_PARAMS>(errorLogger, namespace), RxEffectHandler {
 
     @Suppress("UnsafeCast", "UNCHECKED_CAST")
     override fun call(cmd: Cmd): Single<Msg> = when (cmd) {

@@ -41,7 +41,7 @@ class CachedPagingFeature<T, FETCH_PARAMS>(
         private val params: FETCH_PARAMS,
         private val pageSize: Int,
         private val errorLogger: TeapotLogger? = null
-) : PluggableFeature<CachedPagingState<T, FETCH_PARAMS>>, RxEffectHandler {
+) : PluggableFeature<CachedPagingState<T, FETCH_PARAMS>, Unit>, RxEffectHandler {
 
     private val messages = listOf(
         CachedPagingStartMsg::class,
@@ -63,7 +63,7 @@ class CachedPagingFeature<T, FETCH_PARAMS>(
         LogThrowableCmd::class
     )
 
-    override fun initialState(): CachedPagingState<T, FETCH_PARAMS> {
+    override fun initialState(initialParams : Unit): CachedPagingState<T, FETCH_PARAMS> {
         return CachedPagingState(fetchParams = params, pageSize = pageSize)
     }
 

@@ -15,7 +15,7 @@ abstract class CompositeFeature<S : State>(
 ) : Upd<S>, Renderable<S> {
 
     protected val components: MutableList<
-            Triple<PluggableFeature<State>, ((mainState: S) -> State)?, ((subState: State, mainState: S) -> S)?>> =
+            Triple<PluggableFeature<State, out Any>, ((mainState: S) -> State)?, ((subState: State, mainState: S) -> S)?>> =
             mutableListOf()
 
     protected val program: Program<S> by lazy(LazyThreadSafetyMode.NONE) { buildProgram() }
@@ -50,8 +50,8 @@ abstract class CompositeFeature<S : State>(
     }
 
     @Suppress("UNCHECKED_CAST", "UnsafeCast")
-    fun <SS : State> addFeature(
-            pluggableFeature: PluggableFeature<SS>,
+    fun <SS : State, P : Any> addFeature(
+            pluggableFeature: PluggableFeature<SS, P>,
             toSubStateFun: (mainState: S) -> SS,
             toMainStateFun: (subState: SS, mainState: S) -> S
     ) {
@@ -60,18 +60,18 @@ abstract class CompositeFeature<S : State>(
                         pluggableFeature,
                         toSubStateFun,
                         toMainStateFun
-                ) as Triple<PluggableFeature<State>, (mainState: S) -> State, (subState: State, mainState: S) -> S>
+                ) as Triple<PluggableFeature<State, P>, (mainState: S) -> State, (subState: State, mainState: S) -> S>
         )
     }
 
     @Suppress("UNCHECKED_CAST", "UnsafeCast")
-    fun addMainFeature(feature: PluggableFeature<S>) {
+    fun <P : Any> addMainFeature(feature: PluggableFeature<S, P>) {
         components.add(
                 Triple(
                         feature,
                         null,
                         null
-                ) as Triple<PluggableFeature<State>, ((mainState: S) -> State)?, ((subState: State, mainState: S) -> S)?>
+                ) as Triple<PluggableFeature<State, P>, ((mainState: S) -> State)?, ((subState: State, mainState: S) -> S)?>
         )
     }
 
