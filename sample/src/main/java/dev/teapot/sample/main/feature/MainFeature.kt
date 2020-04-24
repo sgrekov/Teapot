@@ -36,6 +36,7 @@ class MainFeature @Inject constructor(
     private val pagingFeature = programBuilder.buildCoPagingFeature(this)
 
     override suspend fun fetchPage(page: Int, userName: String?): PagingResult<Repository> {
+        delay(500)
         return service.getStarredRepos2(userName, page)
     }
 
