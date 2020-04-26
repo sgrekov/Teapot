@@ -38,10 +38,9 @@ import io.reactivex.Single
 
 class CachedPagingFeature<T, FETCH_PARAMS>(
         private val cmdHandlerPaging: CachedPagingCommandsHandler<T, FETCH_PARAMS>,
-        private val params: FETCH_PARAMS,
         private val pageSize: Int,
         private val errorLogger: TeapotLogger? = null
-) : PluggableFeature<CachedPagingState<T, FETCH_PARAMS>, Unit>, RxEffectHandler {
+) : PluggableFeature<CachedPagingState<T, FETCH_PARAMS>, FETCH_PARAMS>, RxEffectHandler {
 
     private val messages = listOf(
         CachedPagingStartMsg::class,
@@ -63,8 +62,8 @@ class CachedPagingFeature<T, FETCH_PARAMS>(
         LogThrowableCmd::class
     )
 
-    override fun initialState(initialParams : Unit): CachedPagingState<T, FETCH_PARAMS> {
-        return CachedPagingState(fetchParams = params, pageSize = pageSize)
+    override fun initialState(initialParams : FETCH_PARAMS): CachedPagingState<T, FETCH_PARAMS> {
+        return CachedPagingState(fetchParams = initialParams, pageSize = pageSize)
     }
 
     override fun handlesMessage(msg: Msg): Boolean {
