@@ -2,18 +2,20 @@ apply plugin: 'java-library'
 apply plugin: 'kotlin'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
+apply from: '../publish-helper.gradle'
 
 
 group = 'dev.teapot'
 version = teapot_version
 
-publishing {
-    publications {
-        TeapotPublication(MavenPublication) {
-            from components.java
-            groupId group
-            artifactId 'teapot'
-            version teapot_version
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                artifactId = 'teapot'
+                groupId = 'dev.teapot'
+                version = teapot_version
+            }
         }
     }
 }
