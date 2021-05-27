@@ -13,7 +13,7 @@ afterEvaluate {
             release(MavenPublication) {
                 artifactId = 'teapottest'
                 groupId = group
-                version = version
+                version = teapot_version
             }
         }
     }

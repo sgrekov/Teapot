@@ -11,7 +11,7 @@ Unidirectional Dataflow library for Android inspired by The Elm Architecture.
 ```
 repositories {
     ...
-    maven { url "https://dl.bintray.com/sgrekov/Teapot" }
+    mavenCentral()
     ...
 }
 
@@ -34,10 +34,10 @@ It allows to write highly testable and predictable UI logic. Teapot is written i
 #### State 
 This is the type for describing the state of your app or screen. 
 
-#### Msg (short for Message)  
+#### Msg   
 Base type for all events happening during interaction with UI (such as button click, text inputs, etc)
 
-#### Cmd (short for Command) 
+#### Cmd  
 Type for side-effects. If you create Cmd, that means you want to execute a particular side effect (http request or other IO operation).
 When executed, the command will return new Msg with resulting data.
 
