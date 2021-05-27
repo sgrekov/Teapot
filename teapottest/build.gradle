@@ -24,7 +24,7 @@ dependencies {
 
     implementation project(':teapot')
 
-    implementation 'junit:junit:4.12'
+    implementation 'junit:junit:4.13.2'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 
