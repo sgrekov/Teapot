@@ -33,3 +33,6 @@ jobs:
       - name: Run build
         run: ./gradlew :sample:build
 
+      - name: Install SDK
+        run: echo "y" | sudo /usr/local/lib/android/sdk/tools/bin/sdkmanager --install "platforms;android-17" --sdk_root=${ANDROID_SDK_ROOT}
+
